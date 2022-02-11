@@ -16,8 +16,6 @@
 
 package com.google.cloud.storage;
 
-import static java.util.Objects.requireNonNull;
-
 import com.google.cloud.NoCredentials;
 import com.google.cloud.ServiceDefaults;
 import com.google.cloud.ServiceOptions;
@@ -63,7 +61,7 @@ public class StorageOptions extends ServiceOptions<Storage, StorageOptions> {
 
   public static class Builder extends ServiceOptions.Builder<Storage, StorageOptions, Builder> {
 
-    private StorageRetryStrategy storageRetryStrategy;
+    private RetryAlgorithmManager retryAlgorithmManager;
 
     private Builder() {}
 
@@ -80,16 +78,16 @@ public class StorageOptions extends ServiceOptions<Storage, StorageOptions> {
       return super.setTransportOptions(transportOptions);
     }
 
-    /**
-     * Override the default retry handling behavior with an alternate strategy.
-     *
-     * @param storageRetryStrategy a non-null storageRetryStrategy to use
-     * @return the builder
-     * @see StorageRetryStrategy#getDefaultStorageRetryStrategy()
-     */
-    public Builder setStorageRetryStrategy(StorageRetryStrategy storageRetryStrategy) {
-      this.storageRetryStrategy =
-          requireNonNull(storageRetryStrategy, "storageRetryStrategy must be non null");
+    Builder setUseLegacyRetryAlgorithms() {
+      return setRetryAlgorithmManager(new LegacyRetryAlgorithmManager());
+    }
+
+    Builder setUseDefaultRetryAlgorithms() {
+      return setRetryAlgorithmManager(new NewRetryAlgorithmManager());
+    }
+
+    private Builder setRetryAlgorithmManager(RetryAlgorithmManager retryAlgorithmManager) {
+      this.retryAlgorithmManager = retryAlgorithmManager;
       return this;
     }
 
@@ -102,9 +100,8 @@ public class StorageOptions extends ServiceOptions<Storage, StorageOptions> {
   private StorageOptions(Builder builder, StorageDefaults serviceDefaults) {
     super(StorageFactory.class, StorageRpcFactory.class, builder, serviceDefaults);
     this.retryAlgorithmManager =
-        new RetryAlgorithmManager(
-            MoreObjects.firstNonNull(
-                builder.storageRetryStrategy, serviceDefaults.getStorageRetryStrategy()));
+        MoreObjects.firstNonNull(
+            builder.retryAlgorithmManager, serviceDefaults.getRetryAlgorithmManager());
   }
 
   private static class StorageDefaults implements ServiceDefaults<Storage, StorageOptions> {
@@ -124,8 +121,8 @@ public class StorageOptions extends ServiceOptions<Storage, StorageOptions> {
       return getDefaultHttpTransportOptions();
     }
 
-    public StorageRetryStrategy getStorageRetryStrategy() {
-      return StorageRetryStrategy.getDefaultStorageRetryStrategy();
+    public RetryAlgorithmManager getRetryAlgorithmManager() {
+      return new LegacyRetryAlgorithmManager();
     }
   }
 
@@ -166,7 +163,7 @@ public class StorageOptions extends ServiceOptions<Storage, StorageOptions> {
   @SuppressWarnings("unchecked")
   @Override
   public Builder toBuilder() {
-    return new Builder(this);
+    return new Builder(this).setHost(DEFAULT_HOST);
   }
 
   @Override

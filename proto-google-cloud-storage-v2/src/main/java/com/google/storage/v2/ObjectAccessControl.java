@@ -550,22 +550,22 @@ public final class ObjectAccessControl extends com.google.protobuf.GeneratedMess
 
   @java.lang.Override
   public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(role_)) {
+    if (!getRoleBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 1, role_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(id_)) {
+    if (!getIdBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 2, id_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(entity_)) {
+    if (!getEntityBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 3, entity_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(entityId_)) {
+    if (!getEntityIdBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 4, entityId_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(email_)) {
+    if (!getEmailBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 5, email_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(domain_)) {
+    if (!getDomainBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 6, domain_);
     }
     if (projectTeam_ != null) {
@@ -580,22 +580,22 @@ public final class ObjectAccessControl extends com.google.protobuf.GeneratedMess
     if (size != -1) return size;
 
     size = 0;
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(role_)) {
+    if (!getRoleBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, role_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(id_)) {
+    if (!getIdBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, id_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(entity_)) {
+    if (!getEntityBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, entity_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(entityId_)) {
+    if (!getEntityIdBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, entityId_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(email_)) {
+    if (!getEmailBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, email_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(domain_)) {
+    if (!getDomainBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, domain_);
     }
     if (projectTeam_ != null) {

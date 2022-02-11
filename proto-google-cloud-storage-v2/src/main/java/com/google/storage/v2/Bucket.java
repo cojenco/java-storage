@@ -2806,7 +2806,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(defaultKmsKey_)) {
+      if (!getDefaultKmsKeyBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, defaultKmsKey_);
       }
       unknownFields.writeTo(output);
@@ -2818,7 +2818,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
       if (size != -1) return size;
 
       size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(defaultKmsKey_)) {
+      if (!getDefaultKmsKeyBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, defaultKmsKey_);
       }
       size += unknownFields.getSerializedSize();
@@ -6010,10 +6010,10 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
         @java.lang.Override
         public void writeTo(com.google.protobuf.CodedOutputStream output)
             throws java.io.IOException {
-          if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(type_)) {
+          if (!getTypeBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 1, type_);
           }
-          if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(storageClass_)) {
+          if (!getStorageClassBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 2, storageClass_);
           }
           unknownFields.writeTo(output);
@@ -6025,10 +6025,10 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
           if (size != -1) return size;
 
           size = 0;
-          if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(type_)) {
+          if (!getTypeBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, type_);
           }
-          if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(storageClass_)) {
+          if (!getStorageClassBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, storageClass_);
           }
           size += unknownFields.getSerializedSize();
@@ -6625,7 +6625,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * condition.
          * </pre>
          *
-         * <code>optional int32 age_days = 1;</code>
+         * <code>int32 age_days = 1;</code>
          *
          * @return Whether the ageDays field is set.
          */
@@ -6640,7 +6640,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * condition.
          * </pre>
          *
-         * <code>optional int32 age_days = 1;</code>
+         * <code>int32 age_days = 1;</code>
          *
          * @return The ageDays.
          */
@@ -6693,7 +6693,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * is `false`, it matches archived objects.
          * </pre>
          *
-         * <code>optional bool is_live = 3;</code>
+         * <code>bool is_live = 3;</code>
          *
          * @return Whether the isLive field is set.
          */
@@ -6707,7 +6707,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * is `false`, it matches archived objects.
          * </pre>
          *
-         * <code>optional bool is_live = 3;</code>
+         * <code>bool is_live = 3;</code>
          *
          * @return The isLive.
          */
@@ -6722,7 +6722,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * the live version) newer than this version of the object.
          * </pre>
          *
-         * <code>optional int32 num_newer_versions = 4;</code>
+         * <code>int32 num_newer_versions = 4;</code>
          *
          * @return Whether the numNewerVersions field is set.
          */
@@ -6736,7 +6736,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * the live version) newer than this version of the object.
          * </pre>
          *
-         * <code>optional int32 num_newer_versions = 4;</code>
+         * <code>int32 num_newer_versions = 4;</code>
          *
          * @return The numNewerVersions.
          */
@@ -6814,7 +6814,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * The value of the field must be a nonnegative integer.
          * </pre>
          *
-         * <code>optional int32 days_since_custom_time = 7;</code>
+         * <code>int32 days_since_custom_time = 7;</code>
          *
          * @return Whether the daysSinceCustomTime field is set.
          */
@@ -6828,7 +6828,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * The value of the field must be a nonnegative integer.
          * </pre>
          *
-         * <code>optional int32 days_since_custom_time = 7;</code>
+         * <code>int32 days_since_custom_time = 7;</code>
          *
          * @return The daysSinceCustomTime.
          */
@@ -6883,7 +6883,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * eligible for Lifecycle action as soon as it becomes noncurrent.
          * </pre>
          *
-         * <code>optional int32 days_since_noncurrent_time = 9;</code>
+         * <code>int32 days_since_noncurrent_time = 9;</code>
          *
          * @return Whether the daysSinceNoncurrentTime field is set.
          */
@@ -6899,7 +6899,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * eligible for Lifecycle action as soon as it becomes noncurrent.
          * </pre>
          *
-         * <code>optional int32 days_since_noncurrent_time = 9;</code>
+         * <code>int32 days_since_noncurrent_time = 9;</code>
          *
          * @return The daysSinceNoncurrentTime.
          */
@@ -7135,7 +7135,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * condition.
          * </pre>
          *
-         * <code>optional int32 age_days = 1;</code>
+         * <code>int32 age_days = 1;</code>
          *
          * @return Whether the ageDays field is set.
          */
@@ -7153,7 +7153,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * condition.
          * </pre>
          *
-         * <code>optional int32 age_days = 1;</code>
+         * <code>int32 age_days = 1;</code>
          *
          * @return The ageDays.
          */
@@ -7224,7 +7224,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * is `false`, it matches archived objects.
          * </pre>
          *
-         * <code>optional bool is_live = 3;</code>
+         * <code>bool is_live = 3;</code>
          *
          * @return Whether the isLive field is set.
          */
@@ -7241,7 +7241,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * is `false`, it matches archived objects.
          * </pre>
          *
-         * <code>optional bool is_live = 3;</code>
+         * <code>bool is_live = 3;</code>
          *
          * @return The isLive.
          */
@@ -7261,7 +7261,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * the live version) newer than this version of the object.
          * </pre>
          *
-         * <code>optional int32 num_newer_versions = 4;</code>
+         * <code>int32 num_newer_versions = 4;</code>
          *
          * @return Whether the numNewerVersions field is set.
          */
@@ -7278,7 +7278,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * the live version) newer than this version of the object.
          * </pre>
          *
-         * <code>optional int32 num_newer_versions = 4;</code>
+         * <code>int32 num_newer_versions = 4;</code>
          *
          * @return The numNewerVersions.
          */
@@ -7371,7 +7371,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * The value of the field must be a nonnegative integer.
          * </pre>
          *
-         * <code>optional int32 days_since_custom_time = 7;</code>
+         * <code>int32 days_since_custom_time = 7;</code>
          *
          * @return Whether the daysSinceCustomTime field is set.
          */
@@ -7388,7 +7388,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * The value of the field must be a nonnegative integer.
          * </pre>
          *
-         * <code>optional int32 days_since_custom_time = 7;</code>
+         * <code>int32 days_since_custom_time = 7;</code>
          *
          * @return The daysSinceCustomTime.
          */
@@ -7461,7 +7461,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * eligible for Lifecycle action as soon as it becomes noncurrent.
          * </pre>
          *
-         * <code>optional int32 days_since_noncurrent_time = 9;</code>
+         * <code>int32 days_since_noncurrent_time = 9;</code>
          *
          * @return Whether the daysSinceNoncurrentTime field is set.
          */
@@ -7480,7 +7480,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
          * eligible for Lifecycle action as soon as it becomes noncurrent.
          * </pre>
          *
-         * <code>optional int32 days_since_noncurrent_time = 9;</code>
+         * <code>int32 days_since_noncurrent_time = 9;</code>
          *
          * @return The daysSinceNoncurrentTime.
          */
@@ -8106,7 +8106,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * condition.
            * </pre>
            *
-           * <code>optional int32 age_days = 1;</code>
+           * <code>int32 age_days = 1;</code>
            *
            * @return Whether the ageDays field is set.
            */
@@ -8124,7 +8124,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * condition.
            * </pre>
            *
-           * <code>optional int32 age_days = 1;</code>
+           * <code>int32 age_days = 1;</code>
            *
            * @return The ageDays.
            */
@@ -8142,7 +8142,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * condition.
            * </pre>
            *
-           * <code>optional int32 age_days = 1;</code>
+           * <code>int32 age_days = 1;</code>
            *
            * @param value The ageDays to set.
            * @return This builder for chaining.
@@ -8163,7 +8163,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * condition.
            * </pre>
            *
-           * <code>optional int32 age_days = 1;</code>
+           * <code>int32 age_days = 1;</code>
            *
            * @return This builder for chaining.
            */
@@ -8372,7 +8372,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * is `false`, it matches archived objects.
            * </pre>
            *
-           * <code>optional bool is_live = 3;</code>
+           * <code>bool is_live = 3;</code>
            *
            * @return Whether the isLive field is set.
            */
@@ -8389,7 +8389,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * is `false`, it matches archived objects.
            * </pre>
            *
-           * <code>optional bool is_live = 3;</code>
+           * <code>bool is_live = 3;</code>
            *
            * @return The isLive.
            */
@@ -8406,7 +8406,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * is `false`, it matches archived objects.
            * </pre>
            *
-           * <code>optional bool is_live = 3;</code>
+           * <code>bool is_live = 3;</code>
            *
            * @param value The isLive to set.
            * @return This builder for chaining.
@@ -8426,7 +8426,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * is `false`, it matches archived objects.
            * </pre>
            *
-           * <code>optional bool is_live = 3;</code>
+           * <code>bool is_live = 3;</code>
            *
            * @return This builder for chaining.
            */
@@ -8447,7 +8447,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * the live version) newer than this version of the object.
            * </pre>
            *
-           * <code>optional int32 num_newer_versions = 4;</code>
+           * <code>int32 num_newer_versions = 4;</code>
            *
            * @return Whether the numNewerVersions field is set.
            */
@@ -8464,7 +8464,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * the live version) newer than this version of the object.
            * </pre>
            *
-           * <code>optional int32 num_newer_versions = 4;</code>
+           * <code>int32 num_newer_versions = 4;</code>
            *
            * @return The numNewerVersions.
            */
@@ -8481,7 +8481,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * the live version) newer than this version of the object.
            * </pre>
            *
-           * <code>optional int32 num_newer_versions = 4;</code>
+           * <code>int32 num_newer_versions = 4;</code>
            *
            * @param value The numNewerVersions to set.
            * @return This builder for chaining.
@@ -8501,7 +8501,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * the live version) newer than this version of the object.
            * </pre>
            *
-           * <code>optional int32 num_newer_versions = 4;</code>
+           * <code>int32 num_newer_versions = 4;</code>
            *
            * @return This builder for chaining.
            */
@@ -8718,7 +8718,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * The value of the field must be a nonnegative integer.
            * </pre>
            *
-           * <code>optional int32 days_since_custom_time = 7;</code>
+           * <code>int32 days_since_custom_time = 7;</code>
            *
            * @return Whether the daysSinceCustomTime field is set.
            */
@@ -8735,7 +8735,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * The value of the field must be a nonnegative integer.
            * </pre>
            *
-           * <code>optional int32 days_since_custom_time = 7;</code>
+           * <code>int32 days_since_custom_time = 7;</code>
            *
            * @return The daysSinceCustomTime.
            */
@@ -8752,7 +8752,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * The value of the field must be a nonnegative integer.
            * </pre>
            *
-           * <code>optional int32 days_since_custom_time = 7;</code>
+           * <code>int32 days_since_custom_time = 7;</code>
            *
            * @param value The daysSinceCustomTime to set.
            * @return This builder for chaining.
@@ -8772,7 +8772,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * The value of the field must be a nonnegative integer.
            * </pre>
            *
-           * <code>optional int32 days_since_custom_time = 7;</code>
+           * <code>int32 days_since_custom_time = 7;</code>
            *
            * @return This builder for chaining.
            */
@@ -8985,7 +8985,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * eligible for Lifecycle action as soon as it becomes noncurrent.
            * </pre>
            *
-           * <code>optional int32 days_since_noncurrent_time = 9;</code>
+           * <code>int32 days_since_noncurrent_time = 9;</code>
            *
            * @return Whether the daysSinceNoncurrentTime field is set.
            */
@@ -9004,7 +9004,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * eligible for Lifecycle action as soon as it becomes noncurrent.
            * </pre>
            *
-           * <code>optional int32 days_since_noncurrent_time = 9;</code>
+           * <code>int32 days_since_noncurrent_time = 9;</code>
            *
            * @return The daysSinceNoncurrentTime.
            */
@@ -9023,7 +9023,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * eligible for Lifecycle action as soon as it becomes noncurrent.
            * </pre>
            *
-           * <code>optional int32 days_since_noncurrent_time = 9;</code>
+           * <code>int32 days_since_noncurrent_time = 9;</code>
            *
            * @param value The daysSinceNoncurrentTime to set.
            * @return This builder for chaining.
@@ -9045,7 +9045,7 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
            * eligible for Lifecycle action as soon as it becomes noncurrent.
            * </pre>
            *
-           * <code>optional int32 days_since_noncurrent_time = 9;</code>
+           * <code>int32 days_since_noncurrent_time = 9;</code>
            *
            * @return This builder for chaining.
            */
@@ -11314,10 +11314,10 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(logBucket_)) {
+      if (!getLogBucketBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, logBucket_);
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(logObjectPrefix_)) {
+      if (!getLogObjectPrefixBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, logObjectPrefix_);
       }
       unknownFields.writeTo(output);
@@ -11329,10 +11329,10 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
       if (size != -1) return size;
 
       size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(logBucket_)) {
+      if (!getLogBucketBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, logBucket_);
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(logObjectPrefix_)) {
+      if (!getLogObjectPrefixBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, logObjectPrefix_);
       }
       size += unknownFields.getSerializedSize();
@@ -13755,10 +13755,10 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(mainPageSuffix_)) {
+      if (!getMainPageSuffixBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, mainPageSuffix_);
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(notFoundPage_)) {
+      if (!getNotFoundPageBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, notFoundPage_);
       }
       unknownFields.writeTo(output);
@@ -13770,10 +13770,10 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
       if (size != -1) return size;
 
       size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(mainPageSuffix_)) {
+      if (!getMainPageSuffixBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, mainPageSuffix_);
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(notFoundPage_)) {
+      if (!getNotFoundPageBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, notFoundPage_);
       }
       size += unknownFields.getSerializedSize();
@@ -14384,6 +14384,11 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Immutable. The name of the bucket.
+   * Global buckets will be of the format `projects/{project}/buckets/{bucket}`.
+   * Other sorts of buckets in the future are not guaranteed to follow this
+   * pattern.
+   * For globally unique bucket names, a `_` may be substituted for the project
+   * ID.
    * </pre>
    *
    * <code>string name = 1 [(.google.api.field_behavior) = IMMUTABLE];</code>
@@ -14407,6 +14412,11 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Immutable. The name of the bucket.
+   * Global buckets will be of the format `projects/{project}/buckets/{bucket}`.
+   * Other sorts of buckets in the future are not guaranteed to follow this
+   * pattern.
+   * For globally unique bucket names, a `_` may be substituted for the project
+   * ID.
    * </pre>
    *
    * <code>string name = 1 [(.google.api.field_behavior) = IMMUTABLE];</code>
@@ -14486,6 +14496,8 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Immutable. The project which owns this bucket.
+   * Format: projects/{project_number}
+   * Example: `projects/123456`.
    * </pre>
    *
    * <code>
@@ -14511,6 +14523,8 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Immutable. The project which owns this bucket.
+   * Format: projects/{project_number}
+   * Example: `projects/123456`.
    * </pre>
    *
    * <code>
@@ -15778,25 +15792,25 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
 
   @java.lang.Override
   public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
+    if (!getNameBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(bucketId_)) {
+    if (!getBucketIdBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 2, bucketId_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(project_)) {
+    if (!getProjectBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 3, project_);
     }
     if (metageneration_ != 0L) {
       output.writeInt64(4, metageneration_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(location_)) {
+    if (!getLocationBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 5, location_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(locationType_)) {
+    if (!getLocationTypeBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 6, locationType_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(storageClass_)) {
+    if (!getStorageClassBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 7, storageClass_);
     }
     for (int i = 0; i < acl_.size(); i++) {
@@ -15861,25 +15875,25 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
     if (size != -1) return size;
 
     size = 0;
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
+    if (!getNameBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(bucketId_)) {
+    if (!getBucketIdBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, bucketId_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(project_)) {
+    if (!getProjectBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, project_);
     }
     if (metageneration_ != 0L) {
       size += com.google.protobuf.CodedOutputStream.computeInt64Size(4, metageneration_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(location_)) {
+    if (!getLocationBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, location_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(locationType_)) {
+    if (!getLocationTypeBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, locationType_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(storageClass_)) {
+    if (!getStorageClassBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, storageClass_);
     }
     for (int i = 0; i < acl_.size(); i++) {
@@ -16753,6 +16767,11 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The name of the bucket.
+     * Global buckets will be of the format `projects/{project}/buckets/{bucket}`.
+     * Other sorts of buckets in the future are not guaranteed to follow this
+     * pattern.
+     * For globally unique bucket names, a `_` may be substituted for the project
+     * ID.
      * </pre>
      *
      * <code>string name = 1 [(.google.api.field_behavior) = IMMUTABLE];</code>
@@ -16775,6 +16794,11 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The name of the bucket.
+     * Global buckets will be of the format `projects/{project}/buckets/{bucket}`.
+     * Other sorts of buckets in the future are not guaranteed to follow this
+     * pattern.
+     * For globally unique bucket names, a `_` may be substituted for the project
+     * ID.
      * </pre>
      *
      * <code>string name = 1 [(.google.api.field_behavior) = IMMUTABLE];</code>
@@ -16797,6 +16821,11 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The name of the bucket.
+     * Global buckets will be of the format `projects/{project}/buckets/{bucket}`.
+     * Other sorts of buckets in the future are not guaranteed to follow this
+     * pattern.
+     * For globally unique bucket names, a `_` may be substituted for the project
+     * ID.
      * </pre>
      *
      * <code>string name = 1 [(.google.api.field_behavior) = IMMUTABLE];</code>
@@ -16818,6 +16847,11 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The name of the bucket.
+     * Global buckets will be of the format `projects/{project}/buckets/{bucket}`.
+     * Other sorts of buckets in the future are not guaranteed to follow this
+     * pattern.
+     * For globally unique bucket names, a `_` may be substituted for the project
+     * ID.
      * </pre>
      *
      * <code>string name = 1 [(.google.api.field_behavior) = IMMUTABLE];</code>
@@ -16835,6 +16869,11 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The name of the bucket.
+     * Global buckets will be of the format `projects/{project}/buckets/{bucket}`.
+     * Other sorts of buckets in the future are not guaranteed to follow this
+     * pattern.
+     * For globally unique bucket names, a `_` may be substituted for the project
+     * ID.
      * </pre>
      *
      * <code>string name = 1 [(.google.api.field_behavior) = IMMUTABLE];</code>
@@ -16975,6 +17014,8 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The project which owns this bucket.
+     * Format: projects/{project_number}
+     * Example: `projects/123456`.
      * </pre>
      *
      * <code>
@@ -16999,6 +17040,8 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The project which owns this bucket.
+     * Format: projects/{project_number}
+     * Example: `projects/123456`.
      * </pre>
      *
      * <code>
@@ -17023,6 +17066,8 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The project which owns this bucket.
+     * Format: projects/{project_number}
+     * Example: `projects/123456`.
      * </pre>
      *
      * <code>
@@ -17046,6 +17091,8 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The project which owns this bucket.
+     * Format: projects/{project_number}
+     * Example: `projects/123456`.
      * </pre>
      *
      * <code>
@@ -17065,6 +17112,8 @@ public final class Bucket extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Immutable. The project which owns this bucket.
+     * Format: projects/{project_number}
+     * Example: `projects/123456`.
      * </pre>
      *
      * <code>

@@ -65,6 +65,7 @@ public interface ObjectOrBuilder
    *
    * <pre>
    * Immutable. The name of the bucket containing this object.
+   * Example: `projects/_/buckets/foo`.
    * </pre>
    *
    * <code>
@@ -79,6 +80,7 @@ public interface ObjectOrBuilder
    *
    * <pre>
    * Immutable. The name of the bucket containing this object.
+   * Example: `projects/_/buckets/foo`.
    * </pre>
    *
    * <code>
@@ -780,7 +782,7 @@ public interface ObjectOrBuilder
    * In a response, this field will always be set to true or false.
    * </pre>
    *
-   * <code>optional bool event_based_hold = 23;</code>
+   * <code>bool event_based_hold = 23;</code>
    *
    * @return Whether the eventBasedHold field is set.
    */
@@ -801,7 +803,7 @@ public interface ObjectOrBuilder
    * In a response, this field will always be set to true or false.
    * </pre>
    *
-   * <code>optional bool event_based_hold = 23;</code>
+   * <code>bool event_based_hold = 23;</code>
    *
    * @return The eventBasedHold.
    */

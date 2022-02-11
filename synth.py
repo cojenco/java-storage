@@ -18,17 +18,30 @@ import os
 import synthtool as s
 import synthtool.languages.java as java
 
+AUTOSYNTH_MULTIPLE_COMMITS = True
 
-for library in s.get_staging_dirs():
-  # put any special-case replacements here
-  if os.path.exists("owl-bot-staging/v2/gapic-google-cloud-storage-v2/src/main/java/com/google/storage/v2/gapic_metadata.json"):
-    os.remove("owl-bot-staging/v2/gapic-google-cloud-storage-v2/src/main/java/com/google/storage/v2/gapic_metadata.json")
-  s.move(library)
+service = 'storage'
+version = 'v2'
 
-s.remove_staging_dirs()
+library = java.bazel_library(
+    service=service,
+    version=version,
+    proto_path=f'google/{service}/{version}',
+    bazel_target=f'//google/{service}/{version}:google-cloud-{service}-{version}-java',
+    preserve_gapic=True,
+)
 
 java.common_templates(excludes=[
   '.kokoro/nightly/integration.cfg',
   '.kokoro/presubmit/integration.cfg',
   'CONTRIBUTING.md'
 ])
+
+gapic_main_dir = f'gapic-google-cloud-{service}-{version}/src/main'
+gapic_resource_dir = gapic_main_dir + '/resources/com/google/storage/v2'
+if not os.path.exists(gapic_resource_dir):
+  os.makedirs(gapic_resource_dir)
+os.rename(
+    gapic_main_dir + '/java/com/google/storage/v2/gapic_metadata.json',
+    gapic_resource_dir + '/gapic_metadata.json',
+)

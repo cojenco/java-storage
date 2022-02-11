@@ -65,15 +65,11 @@ public class PolicyHelperTest {
     assertTrue(new ApiPolicyMatcher(apiPolicy).matches(actualApiPolicy));
   }
 
-  @Test
+  @Test(expected = IllegalStateException.class)
   public void testApiPolicyWithoutBinding() {
     List<Bindings> bindings = null;
     com.google.api.services.storage.model.Policy apiPolicy =
-        new com.google.api.services.storage.model.Policy()
-            .setBindings(bindings)
-            .setEtag(ETAG)
-            .setVersion(1);
-    Policy policy = PolicyHelper.convertFromApiPolicy(apiPolicy);
-    assertEquals(policy.getBindings().size(), 0);
+        new com.google.api.services.storage.model.Policy().setBindings(bindings).setEtag(ETAG);
+    PolicyHelper.convertFromApiPolicy(apiPolicy);
   }
 }

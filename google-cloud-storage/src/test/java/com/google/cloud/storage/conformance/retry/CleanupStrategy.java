@@ -16,7 +16,7 @@
 
 package com.google.cloud.storage.conformance.retry;
 
-public enum CleanupStrategy {
+enum CleanupStrategy {
   ALWAYS,
   ONLY_ON_SUCCESS,
   NEVER

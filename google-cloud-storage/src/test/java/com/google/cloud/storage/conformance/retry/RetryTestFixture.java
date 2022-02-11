@@ -18,13 +18,18 @@ package com.google.cloud.storage.conformance.retry;
 
 import static org.junit.Assert.assertTrue;
 
-import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.cloud.NoCredentials;
+import com.google.cloud.conformance.storage.v1.InstructionList;
+import com.google.cloud.conformance.storage.v1.Method;
+import com.google.cloud.storage.PackagePrivateMethodWorkarounds;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.cloud.storage.conformance.retry.TestBench.RetryTestResource;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import java.util.Map;
 import java.util.logging.Logger;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
@@ -83,7 +88,7 @@ final class RetryTestFixture implements TestRule {
         try {
           LOGGER.fine("Setting up retry_test resource...");
           RetryTestResource retryTestResource =
-              RetryTestResource.newRetryTestResource(
+              newRetryTestResource(
                   testRetryConformance.getMethod(), testRetryConformance.getInstruction());
           retryTest = testBench.createRetryTest(retryTestResource);
           LOGGER.fine("Setting up retry_test resource complete");
@@ -118,32 +123,48 @@ final class RetryTestFixture implements TestRule {
         || ((testSuccess || testSkipped) && cleanupStrategy == CleanupStrategy.ONLY_ON_SUCCESS);
   }
 
+  private static RetryTestResource newRetryTestResource(Method m, InstructionList l) {
+    RetryTestResource resource = new RetryTestResource();
+    resource.instructions = new JsonObject();
+    JsonArray instructions = new JsonArray();
+    for (String s : l.getInstructionsList()) {
+      instructions.add(s);
+    }
+    resource.instructions.add(m.getName(), instructions);
+    return resource;
+  }
+
   private Storage newStorage(boolean forTest) {
     StorageOptions.Builder builder =
         StorageOptions.newBuilder()
             .setHost(testBench.getBaseUri())
             .setCredentials(NoCredentials.getInstance())
             .setProjectId(testRetryConformance.getProjectId());
-    RetrySettings.Builder retrySettingsBuilder =
-        StorageOptions.getDefaultRetrySettings().toBuilder();
+    builder = PackagePrivateMethodWorkarounds.useNewRetryAlgorithmManager(builder);
     if (forTest) {
       builder
           .setHeaderProvider(
-              FixedHeaderProvider.create(
-                  ImmutableMap.of(
-                      "x-retry-test-id", retryTest.id, "User-Agent", fmtUserAgent("test"))))
-          .setRetrySettings(retrySettingsBuilder.setMaxAttempts(3).build());
+              new FixedHeaderProvider() {
+                @Override
+                public Map<String, String> getHeaders() {
+                  return ImmutableMap.of(
+                      "x-retry-test-id", retryTest.id, "User-Agent", "java-conformance-tests/");
+                }
+              })
+          .setRetrySettings(
+              StorageOptions.getDefaultRetrySettings().toBuilder().setMaxAttempts(3).build());
     } else {
       builder
           .setHeaderProvider(
-              FixedHeaderProvider.create(ImmutableMap.of("User-Agent", fmtUserAgent("non-test"))))
-          .setRetrySettings(retrySettingsBuilder.setMaxAttempts(1).build());
+              new FixedHeaderProvider() {
+                @Override
+                public Map<String, String> getHeaders() {
+                  return ImmutableMap.of("User-Agent", "java-conformance-tests/");
+                }
+              })
+          .setRetrySettings(
+              StorageOptions.getDefaultRetrySettings().toBuilder().setMaxAttempts(1).build());
     }
     return builder.build().getService();
-  }
-
-  private String fmtUserAgent(String testDescriptor) {
-    return String.format(
-        "%s/ (%s) java-conformance-tests/", testDescriptor, testRetryConformance.getTestName());
   }
 }

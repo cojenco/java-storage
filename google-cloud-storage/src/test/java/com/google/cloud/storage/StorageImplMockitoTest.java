@@ -36,7 +36,6 @@ import com.google.cloud.ReadChannel;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.Tuple;
 import com.google.cloud.WriteChannel;
-import com.google.cloud.storage.Storage.BlobTargetOption;
 import com.google.cloud.storage.spi.StorageRpcFactory;
 import com.google.cloud.storage.spi.v1.StorageRpc;
 import com.google.common.collect.ImmutableList;
@@ -122,8 +121,6 @@ public class StorageImplMockitoTest {
 
   // Empty StorageRpc options
   private static final Map<StorageRpc.Option, ?> EMPTY_RPC_OPTIONS = ImmutableMap.of();
-  private static final Map<StorageRpc.Option, ?> BLOB_INFO1_RPC_OPTIONS_WITH_GENERATION =
-      ImmutableMap.of(StorageRpc.Option.IF_GENERATION_MATCH, 24L);
 
   // Bucket target options
   private static final Storage.BucketTargetOption BUCKET_TARGET_METAGENERATION =
@@ -729,10 +726,7 @@ public class StorageImplMockitoTest {
         .doReturn(BLOB_INFO1.toPb())
         .doThrow(UNEXPECTED_CALL_EXCEPTION)
         .when(storageRpcMock)
-        .create(
-            Mockito.eq(storageObject),
-            capturedStream.capture(),
-            Mockito.eq(BLOB_INFO1_RPC_OPTIONS_WITH_GENERATION));
+        .create(Mockito.eq(storageObject), capturedStream.capture(), Mockito.eq(EMPTY_RPC_OPTIONS));
 
     storage =
         options
@@ -742,7 +736,7 @@ public class StorageImplMockitoTest {
             .getService();
     initializeServiceDependentObjects();
 
-    Blob blob = storage.create(BLOB_INFO1, BLOB_CONTENT, BlobTargetOption.generationMatch());
+    Blob blob = storage.create(BLOB_INFO1, BLOB_CONTENT);
 
     assertEquals(expectedBlob1, blob);
 

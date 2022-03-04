@@ -284,17 +284,18 @@ public class BlobInfoTest {
   @Test
   public void testToPbAndFromPb() {
     compareCustomerEncryptions(
-        CUSTOMER_ENCRYPTION, CustomerEncryption.fromPb(CUSTOMER_ENCRYPTION.toPb()));
-    compareBlobs(BLOB_INFO, BlobInfo.fromPb(BLOB_INFO.toPb()));
+        CUSTOMER_ENCRYPTION,
+        ApiaryConversions.decode(ApiaryConversions.encode(CUSTOMER_ENCRYPTION)));
+    compareBlobs(BLOB_INFO, ApiaryConversions.decode(ApiaryConversions.encode(BLOB_INFO)));
     BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of("b", "n")).build();
-    compareBlobs(blobInfo, BlobInfo.fromPb(blobInfo.toPb()));
+    compareBlobs(blobInfo, ApiaryConversions.decode(ApiaryConversions.encode(blobInfo)));
     StorageObject object =
         new StorageObject()
             .setName("n/")
             .setBucket("b")
             .setSize(BigInteger.ZERO)
             .set("isDirectory", true);
-    blobInfo = BlobInfo.fromPb(object);
+    blobInfo = ApiaryConversions.decode(object);
     assertEquals("b", blobInfo.getBucket());
     assertEquals("n/", blobInfo.getName());
     assertNull(blobInfo.getAcl());

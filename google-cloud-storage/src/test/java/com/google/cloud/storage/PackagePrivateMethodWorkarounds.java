@@ -34,12 +34,14 @@ public final class PackagePrivateMethodWorkarounds {
   private PackagePrivateMethodWorkarounds() {}
 
   public static Bucket bucketCopyWithStorage(Bucket b, Storage s) {
-    BucketInfo.BuilderImpl builder = (BuilderImpl) BucketInfo.fromPb(b.toPb()).toBuilder();
+    BucketInfo.BuilderImpl builder =
+        (BuilderImpl) ApiaryConversions.decode(ApiaryConversions.encode(b)).toBuilder();
     return new Bucket(s, builder);
   }
 
   public static Blob blobCopyWithStorage(Blob b, Storage s) {
-    BlobInfo.BuilderImpl builder = (BlobInfo.BuilderImpl) BlobInfo.fromPb(b.toPb()).toBuilder();
+    BlobInfo.BuilderImpl builder =
+        (BlobInfo.BuilderImpl) ApiaryConversions.decode(ApiaryConversions.encode(b)).toBuilder();
     return new Blob(s, builder);
   }
 

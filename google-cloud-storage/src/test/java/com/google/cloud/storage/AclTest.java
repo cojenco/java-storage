@@ -65,8 +65,8 @@ public class AclTest {
 
   @Test
   public void testToAndFromPb() {
-    assertEquals(ACL, Acl.fromPb(ACL.toBucketPb()));
-    assertEquals(ACL, Acl.fromPb(ACL.toObjectPb()));
+    assertEquals(ACL, ApiaryConversions.decode(ApiaryConversions.encodeBucket(ACL)));
+    assertEquals(ACL, ApiaryConversions.decode(ApiaryConversions.encodeObject(ACL)));
   }
 
   @Test
@@ -74,8 +74,8 @@ public class AclTest {
     Domain acl = new Domain("d1");
     assertEquals("d1", acl.getDomain());
     assertEquals(Type.DOMAIN, acl.getType());
-    String pb = acl.toPb();
-    assertEquals(acl, Entity.fromPb(pb));
+    String pb = ApiaryConversions.encode(acl);
+    assertEquals(acl, ApiaryConversions.decode(pb));
   }
 
   @Test
@@ -83,8 +83,8 @@ public class AclTest {
     Group acl = new Group("g1");
     assertEquals("g1", acl.getEmail());
     assertEquals(Type.GROUP, acl.getType());
-    String pb = acl.toPb();
-    assertEquals(acl, Entity.fromPb(pb));
+    String pb = ApiaryConversions.encode(acl);
+    assertEquals(acl, ApiaryConversions.decode(pb));
   }
 
   @Test
@@ -92,8 +92,8 @@ public class AclTest {
     User acl = new User("u1");
     assertEquals("u1", acl.getEmail());
     assertEquals(Type.USER, acl.getType());
-    String pb = acl.toPb();
-    assertEquals(acl, Entity.fromPb(pb));
+    String pb = ApiaryConversions.encode(acl);
+    assertEquals(acl, ApiaryConversions.decode(pb));
   }
 
   @Test
@@ -102,8 +102,8 @@ public class AclTest {
     assertEquals(ProjectRole.VIEWERS, acl.getProjectRole());
     assertEquals("p1", acl.getProjectId());
     assertEquals(Type.PROJECT, acl.getType());
-    String pb = acl.toPb();
-    assertEquals(acl, Entity.fromPb(pb));
+    String pb = ApiaryConversions.encode(acl);
+    assertEquals(acl, ApiaryConversions.decode(pb));
   }
 
   @Test
@@ -111,8 +111,8 @@ public class AclTest {
     Entity acl = new RawEntity("bla");
     assertEquals("bla", acl.getValue());
     assertEquals(Type.UNKNOWN, acl.getType());
-    String pb = acl.toPb();
-    assertEquals(acl, Entity.fromPb(pb));
+    String pb = ApiaryConversions.encode(acl);
+    assertEquals(acl, ApiaryConversions.decode(pb));
   }
 
   @Test
@@ -120,9 +120,9 @@ public class AclTest {
     Acl acl = Acl.of(User.ofAllUsers(), Role.READER);
     assertEquals(User.ofAllUsers(), acl.getEntity());
     assertEquals(Role.READER, acl.getRole());
-    ObjectAccessControl objectPb = acl.toObjectPb();
-    assertEquals(acl, Acl.fromPb(objectPb));
-    BucketAccessControl bucketPb = acl.toBucketPb();
-    assertEquals(acl, Acl.fromPb(bucketPb));
+    ObjectAccessControl objectPb = ApiaryConversions.encodeObject(acl);
+    assertEquals(acl, ApiaryConversions.decode(objectPb));
+    BucketAccessControl bucketPb = ApiaryConversions.encodeBucket(acl);
+    assertEquals(acl, ApiaryConversions.decode(bucketPb));
   }
 }

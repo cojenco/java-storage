@@ -63,7 +63,7 @@ class BlobReadChannel implements ReadChannel {
     this.retryAlgorithmManager = serviceOptions.getRetryAlgorithmManager();
     isOpen = true;
     storageRpc = serviceOptions.getStorageRpcV1();
-    storageObject = blob.toPb();
+    storageObject = ApiaryConversions.encode(blob);
     this.limit = Long.MAX_VALUE;
   }
 

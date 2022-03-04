@@ -53,6 +53,6 @@ public class BlobIdTest {
 
   @Test
   public void testToPbAndFromPb() {
-    compareBlobIds(BLOB, BlobId.fromPb(BLOB.toPb()));
+    compareBlobIds(BLOB, ApiaryConversions.decode(ApiaryConversions.encode(BLOB)));
   }
 }

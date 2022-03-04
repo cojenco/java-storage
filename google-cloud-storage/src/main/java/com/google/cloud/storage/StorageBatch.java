@@ -100,7 +100,7 @@ public class StorageBatch {
     StorageBatchResult<Boolean> result = new StorageBatchResult<>();
     RpcBatch.Callback<Void> callback = createDeleteCallback(result);
     Map<StorageRpc.Option, ?> optionMap = StorageImpl.optionMap(blob, options);
-    batch.addDelete(blob.toPb(), callback, optionMap);
+    batch.addDelete(ApiaryConversions.encode(blob), callback, optionMap);
     return result;
   }
 
@@ -114,7 +114,7 @@ public class StorageBatch {
     StorageBatchResult<Blob> result = new StorageBatchResult<>();
     RpcBatch.Callback<StorageObject> callback = createUpdateCallback(this.options, result);
     Map<StorageRpc.Option, ?> optionMap = StorageImpl.optionMap(blobInfo, options);
-    batch.addPatch(blobInfo.toPb(), callback, optionMap);
+    batch.addPatch(ApiaryConversions.encode(blobInfo), callback, optionMap);
     return result;
   }
 
@@ -140,7 +140,7 @@ public class StorageBatch {
     StorageBatchResult<Blob> result = new StorageBatchResult<>();
     RpcBatch.Callback<StorageObject> callback = createGetCallback(this.options, result);
     Map<StorageRpc.Option, ?> optionMap = StorageImpl.optionMap(blob, options);
-    batch.addGet(blob.toPb(), callback, optionMap);
+    batch.addGet(ApiaryConversions.encode(blob), callback, optionMap);
     return result;
   }
 
@@ -174,7 +174,7 @@ public class StorageBatch {
       @Override
       public void onSuccess(StorageObject response) {
         result.success(
-            response == null ? null : Blob.fromPb(serviceOptions.getService(), response));
+            response == null ? null : Blob.decodeAndAttach(serviceOptions.getService(), response));
       }
 
       @Override
@@ -195,7 +195,7 @@ public class StorageBatch {
       @Override
       public void onSuccess(StorageObject response) {
         result.success(
-            response == null ? null : Blob.fromPb(serviceOptions.getService(), response));
+            response == null ? null : Blob.decodeAndAttach(serviceOptions.getService(), response));
       }
 
       @Override

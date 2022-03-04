@@ -71,7 +71,7 @@ public class CopyWriter implements Restorable<CopyWriter> {
     while (!isDone()) {
       copyChunk();
     }
-    return Blob.fromPb(serviceOptions.getService(), rewriteResponse.result);
+    return Blob.decodeAndAttach(serviceOptions.getService(), rewriteResponse.result);
   }
 
   /** Returns the size of the blob being copied. */
@@ -111,12 +111,15 @@ public class CopyWriter implements Restorable<CopyWriter> {
   public RestorableState<CopyWriter> capture() {
     return StateImpl.newBuilder(
             serviceOptions,
-            BlobId.fromPb(rewriteResponse.rewriteRequest.source),
+            ApiaryConversions.decode(rewriteResponse.rewriteRequest.source),
             rewriteResponse.rewriteRequest.sourceOptions,
             rewriteResponse.rewriteRequest.overrideInfo,
-            BlobInfo.fromPb(rewriteResponse.rewriteRequest.target),
+            ApiaryConversions.decode(rewriteResponse.rewriteRequest.target),
             rewriteResponse.rewriteRequest.targetOptions)
-        .setResult(rewriteResponse.result != null ? BlobInfo.fromPb(rewriteResponse.result) : null)
+        .setResult(
+            rewriteResponse.result != null
+                ? ApiaryConversions.decode(rewriteResponse.result)
+                : null)
         .setBlobSize(getBlobSize())
         .setIsDone(isDone())
         .setMegabytesCopiedPerChunk(rewriteResponse.rewriteRequest.megabytesRewrittenPerCall)
@@ -236,16 +239,16 @@ public class CopyWriter implements Restorable<CopyWriter> {
     public CopyWriter restore() {
       RewriteRequest rewriteRequest =
           new RewriteRequest(
-              source.toPb(),
+              ApiaryConversions.encode(source),
               sourceOptions,
               overrideInfo,
-              target.toPb(),
+              ApiaryConversions.encode(target),
               targetOptions,
               megabytesCopiedPerChunk);
       RewriteResponse rewriteResponse =
           new RewriteResponse(
               rewriteRequest,
-              result != null ? result.toPb() : null,
+              result != null ? ApiaryConversions.encode(result) : null,
               blobSize,
               isDone,
               rewriteToken,

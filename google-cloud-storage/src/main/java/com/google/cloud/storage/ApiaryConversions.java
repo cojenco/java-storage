@@ -450,7 +450,8 @@ final class ApiaryConversions {
 
     @SuppressWarnings("deprecation")
     List<? extends DeleteRule> deleteRules = bucketInfo.getDeleteRules();
-    List<? extends LifecycleRule> lifecycleRules = bucketInfo.getLifecycleRules();
+    // Do not use, #getLifecycleRules, it can not return null, which is important to our logic here
+    List<? extends LifecycleRule> lifecycleRules = bucketInfo.lifecycleRules;
     if (deleteRules != null || lifecycleRules != null) {
       Lifecycle lifecycle = new Lifecycle();
 

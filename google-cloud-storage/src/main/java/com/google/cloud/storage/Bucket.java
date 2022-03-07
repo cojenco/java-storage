@@ -1233,7 +1233,9 @@ public class Bucket extends BucketInfo {
       return false;
     }
     Bucket other = (Bucket) obj;
-    return Objects.equals(ApiaryConversions.encode(this), ApiaryConversions.encode(other))
+    return Objects.equals(
+            Conversions.apiary().bucketInfo().encode(this),
+            Conversions.apiary().bucketInfo().encode(other))
         && Objects.equals(options, other.options);
   }
 
@@ -1247,7 +1249,9 @@ public class Bucket extends BucketInfo {
     this.storage = options.getService();
   }
 
-  static Bucket fromPb(Storage storage, com.google.api.services.storage.model.Bucket bucketPb) {
-    return new Bucket(storage, new BucketInfo.BuilderImpl(ApiaryConversions.decode(bucketPb)));
+  static Bucket decodeAndAttach(
+      Storage storage, com.google.api.services.storage.model.Bucket bucketPb) {
+    return new Bucket(
+        storage, new BucketInfo.BuilderImpl(Conversions.apiary().bucketInfo().decode(bucketPb)));
   }
 }

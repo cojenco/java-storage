@@ -35,13 +35,21 @@ public final class PackagePrivateMethodWorkarounds {
 
   public static Bucket bucketCopyWithStorage(Bucket b, Storage s) {
     BucketInfo.BuilderImpl builder =
-        (BuilderImpl) ApiaryConversions.decode(ApiaryConversions.encode(b)).toBuilder();
+        (BuilderImpl)
+            Conversions.apiary()
+                .bucketInfo()
+                .decode(Conversions.apiary().bucketInfo().encode(b))
+                .toBuilder();
     return new Bucket(s, builder);
   }
 
   public static Blob blobCopyWithStorage(Blob b, Storage s) {
     BlobInfo.BuilderImpl builder =
-        (BlobInfo.BuilderImpl) ApiaryConversions.decode(ApiaryConversions.encode(b)).toBuilder();
+        (BlobInfo.BuilderImpl)
+            Conversions.apiary()
+                .blobInfo()
+                .decode(Conversions.apiary().blobInfo().encode(b))
+                .toBuilder();
     return new Blob(s, builder);
   }
 

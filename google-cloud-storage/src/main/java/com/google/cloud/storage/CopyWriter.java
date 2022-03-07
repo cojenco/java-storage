@@ -111,14 +111,14 @@ public class CopyWriter implements Restorable<CopyWriter> {
   public RestorableState<CopyWriter> capture() {
     return StateImpl.newBuilder(
             serviceOptions,
-            ApiaryConversions.decode(rewriteResponse.rewriteRequest.source),
+            Conversions.apiary().blobId().decode(rewriteResponse.rewriteRequest.source),
             rewriteResponse.rewriteRequest.sourceOptions,
             rewriteResponse.rewriteRequest.overrideInfo,
-            ApiaryConversions.decode(rewriteResponse.rewriteRequest.target),
+            Conversions.apiary().blobInfo().decode(rewriteResponse.rewriteRequest.target),
             rewriteResponse.rewriteRequest.targetOptions)
         .setResult(
             rewriteResponse.result != null
-                ? ApiaryConversions.decode(rewriteResponse.result)
+                ? Conversions.apiary().blobInfo().decode(rewriteResponse.result)
                 : null)
         .setBlobSize(getBlobSize())
         .setIsDone(isDone())
@@ -239,16 +239,16 @@ public class CopyWriter implements Restorable<CopyWriter> {
     public CopyWriter restore() {
       RewriteRequest rewriteRequest =
           new RewriteRequest(
-              ApiaryConversions.encode(source),
+              Conversions.apiary().blobId().encode(source),
               sourceOptions,
               overrideInfo,
-              ApiaryConversions.encode(target),
+              Conversions.apiary().blobInfo().encode(target),
               targetOptions,
               megabytesCopiedPerChunk);
       RewriteResponse rewriteResponse =
           new RewriteResponse(
               rewriteRequest,
-              result != null ? ApiaryConversions.encode(result) : null,
+              result != null ? Conversions.apiary().blobInfo().encode(result) : null,
               blobSize,
               isDone,
               rewriteToken,

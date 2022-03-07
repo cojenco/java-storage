@@ -20,6 +20,10 @@ final class Conversions {
 
   private Conversions() {}
 
+  static ApiaryConversions apiary() {
+    return ApiaryConversions.INSTANCE;
+  }
+
   @FunctionalInterface
   interface Encoder<From, To> {
     To encode(From f);

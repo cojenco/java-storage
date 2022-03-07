@@ -58,7 +58,6 @@ import com.google.cloud.storage.Conversions.Codec;
 import com.google.cloud.storage.Cors.Origin;
 import com.google.cloud.storage.HmacKey.HmacKeyMetadata;
 import com.google.cloud.storage.HmacKey.HmacKeyState;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import java.math.BigInteger;
@@ -69,16 +68,108 @@ import java.util.Map;
 import java.util.Set;
 
 final class ApiaryConversions {
+  static final ApiaryConversions INSTANCE = new ApiaryConversions();
 
-  static final Codec<Entity, String> ENTITY_CODEC =
-      Codec.of(ApiaryConversions::encode, ApiaryConversions::decode);
+  final Codec<Entity, String> entityCodec = Codec.of(this::entityEncode, this::entityDecode);
+  final Codec<Acl, ObjectAccessControl> objectAclCodec =
+      Codec.of(this::objectAclEncode, this::objectAclDecode);
+  final Codec<Acl, BucketAccessControl> bucketAclCodec =
+      Codec.of(this::bucketAclEncode, this::bucketAclDecode);
+  final Codec<HmacKeyMetadata, com.google.api.services.storage.model.HmacKeyMetadata>
+      hmacKeyMetadataCodec = Codec.of(this::hmacKeyMetadataEncode, this::hmacKeyMetadataDecode);
+  final Codec<HmacKey, com.google.api.services.storage.model.HmacKey> hmacKeyCodec =
+      Codec.of(this::hmacKeyEncode, this::hmacKeyDecode);
+  final Codec<ServiceAccount, com.google.api.services.storage.model.ServiceAccount>
+      serviceAccountCodec = Codec.of(this::serviceAccountEncode, this::serviceAccountDecode);
+  final Codec<Cors, Bucket.Cors> corsCodec = Codec.of(this::corsEncode, this::corsDecode);
+  final Codec<Logging, Bucket.Logging> loggingCodec =
+      Codec.of(this::loggingEncode, this::loggingDecode);
+  final Codec<IamConfiguration, Bucket.IamConfiguration> iamConfigurationCodec =
+      Codec.of(this::iamConfigEncode, this::iamConfigDecode);
+  final Codec<LifecycleRule, Rule> lifecycleRuleCodec =
+      Codec.of(this::lifecycleRuleEncode, this::lifecycleRuleDecode);
 
-  static StorageObject encode(BlobInfo blobInfo) {
-    StorageObject storageObject = encode(blobInfo.getBlobId());
+  @SuppressWarnings("deprecation")
+  final Codec<DeleteRule, Rule> deleteRuleCodec =
+      Codec.of(this::deleteRuleEncode, this::deleteRuleDecode);
+
+  final Codec<BucketInfo, Bucket> bucketInfoCodec =
+      Codec.of(this::bucketInfoEncode, this::bucketInfoDecode);
+  final Codec<CustomerEncryption, StorageObject.CustomerEncryption> customerEncryptionCodec =
+      Codec.of(this::customerEncryptionEncode, this::customerEncryptionDecode);
+  final Codec<BlobId, StorageObject> blobIdCodec = Codec.of(this::blobIdEncode, this::blobIdDecode);
+  final Codec<BlobInfo, StorageObject> blobInfoCodec =
+      Codec.of(this::blobInfoEncode, this::blobInfoDecode);
+
+  private ApiaryConversions() {}
+
+  Codec<Entity, String> entity() {
+    return entityCodec;
+  }
+
+  Codec<Acl, ObjectAccessControl> objectAcl() {
+    return objectAclCodec;
+  }
+
+  Codec<Acl, BucketAccessControl> bucketAcl() {
+    return bucketAclCodec;
+  }
+
+  Codec<HmacKeyMetadata, com.google.api.services.storage.model.HmacKeyMetadata> hmacKeyMetadata() {
+    return hmacKeyMetadataCodec;
+  }
+
+  Codec<HmacKey, com.google.api.services.storage.model.HmacKey> hmacKey() {
+    return hmacKeyCodec;
+  }
+
+  Codec<ServiceAccount, com.google.api.services.storage.model.ServiceAccount> serviceAccount() {
+    return serviceAccountCodec;
+  }
+
+  Codec<Cors, Bucket.Cors> cors() {
+    return corsCodec;
+  }
+
+  Codec<Logging, Bucket.Logging> logging() {
+    return loggingCodec;
+  }
+
+  Codec<IamConfiguration, Bucket.IamConfiguration> iamConfiguration() {
+    return iamConfigurationCodec;
+  }
+
+  Codec<LifecycleRule, Rule> lifecycleRule() {
+    return lifecycleRuleCodec;
+  }
+
+  @SuppressWarnings("deprecation")
+  Codec<DeleteRule, Rule> deleteRule() {
+    return deleteRuleCodec;
+  }
+
+  Codec<BucketInfo, com.google.api.services.storage.model.Bucket> bucketInfo() {
+    return bucketInfoCodec;
+  }
+
+  Codec<CustomerEncryption, StorageObject.CustomerEncryption> customerEncryption() {
+    return customerEncryptionCodec;
+  }
+
+  Codec<BlobId, StorageObject> blobId() {
+    return blobIdCodec;
+  }
+
+  Codec<BlobInfo, StorageObject> blobInfo() {
+    return blobInfoCodec;
+  }
+
+  private StorageObject blobInfoEncode(BlobInfo blobInfo) {
+    StorageObject storageObject = blobIdEncode(blobInfo.getBlobId());
     if (blobInfo.getAcl() != null) {
       storageObject.setAcl(
           blobInfo.getAcl().stream()
-              .map(ApiaryConversions::encodeObject)
+              .map(objectAcl()::encode)
               .collect(ImmutableList.toImmutableList()));
     }
     if (blobInfo.getDeleteTime() != null) {
@@ -97,7 +188,7 @@ final class ApiaryConversions {
       storageObject.setSize(BigInteger.valueOf(blobInfo.getSize()));
     }
     if (blobInfo.getOwner() != null) {
-      storageObject.setOwner(new Owner().setEntity(encode(blobInfo.getOwner())));
+      storageObject.setOwner(new Owner().setEntity(entityEncode(blobInfo.getOwner())));
     }
     if (blobInfo.getStorageClass() != null) {
       storageObject.setStorageClass(blobInfo.getStorageClass().toString());
@@ -114,7 +205,8 @@ final class ApiaryConversions {
       }
     }
     if (blobInfo.getCustomerEncryption() != null) {
-      storageObject.setCustomerEncryption(encode(blobInfo.getCustomerEncryption()));
+      storageObject.setCustomerEncryption(
+          customerEncryptionEncode(blobInfo.getCustomerEncryption()));
     }
     if (blobInfo.getRetentionExpirationTime() != null) {
       storageObject.setRetentionExpirationTime(new DateTime(blobInfo.getRetentionExpirationTime()));
@@ -139,8 +231,8 @@ final class ApiaryConversions {
     return storageObject;
   }
 
-  static BlobInfo decode(StorageObject storageObject) {
-    BlobInfo.Builder builder = BlobInfo.newBuilder(decodeId(storageObject));
+  private BlobInfo blobInfoDecode(StorageObject storageObject) {
+    BlobInfo.Builder builder = BlobInfo.newBuilder(blobIdDecode(storageObject));
     if (storageObject.getCacheControl() != null) {
       builder.setCacheControl(storageObject.getCacheControl());
     }
@@ -199,19 +291,20 @@ final class ApiaryConversions {
       builder.setSize(storageObject.getSize().longValue());
     }
     if (storageObject.getOwner() != null) {
-      builder.setOwner(decode(storageObject.getOwner().getEntity()));
+      builder.setOwner(entityDecode(storageObject.getOwner().getEntity()));
     }
     if (storageObject.getAcl() != null) {
       builder.setAcl(
           storageObject.getAcl().stream()
-              .map(ApiaryConversions::decode)
+              .map(objectAcl()::decode)
               .collect(ImmutableList.toImmutableList()));
     }
     if (storageObject.containsKey("isDirectory")) {
       builder.setIsDirectory(Boolean.TRUE);
     }
     if (storageObject.getCustomerEncryption() != null) {
-      builder.setCustomerEncryption(decode(storageObject.getCustomerEncryption()));
+      builder.setCustomerEncryption(
+          customerEncryptionDecode(storageObject.getCustomerEncryption()));
     }
     if (storageObject.getStorageClass() != null) {
       builder.setStorageClass(StorageClass.valueOf(storageObject.getStorageClass()));
@@ -234,7 +327,7 @@ final class ApiaryConversions {
     return builder.build();
   }
 
-  static StorageObject encode(BlobId blobId) {
+  private StorageObject blobIdEncode(BlobId blobId) {
     StorageObject storageObject = new StorageObject();
     storageObject.setBucket(blobId.getBucket());
     storageObject.setName(blobId.getName());
@@ -242,23 +335,25 @@ final class ApiaryConversions {
     return storageObject;
   }
 
-  static BlobId decodeId(StorageObject storageObject) {
+  private BlobId blobIdDecode(StorageObject storageObject) {
     return BlobId.of(
         storageObject.getBucket(), storageObject.getName(), storageObject.getGeneration());
   }
 
-  static StorageObject.CustomerEncryption encode(CustomerEncryption customerEncryption) {
+  private StorageObject.CustomerEncryption customerEncryptionEncode(
+      CustomerEncryption customerEncryption) {
     return new StorageObject.CustomerEncryption()
         .setEncryptionAlgorithm(customerEncryption.getEncryptionAlgorithm())
         .setKeySha256(customerEncryption.getKeySha256());
   }
 
-  static CustomerEncryption decode(StorageObject.CustomerEncryption customerEncryptionPb) {
+  private CustomerEncryption customerEncryptionDecode(
+      StorageObject.CustomerEncryption customerEncryptionPb) {
     return new CustomerEncryption(
         customerEncryptionPb.getEncryptionAlgorithm(), customerEncryptionPb.getKeySha256());
   }
 
-  static com.google.api.services.storage.model.Bucket encode(BucketInfo bucketInfo) {
+  private com.google.api.services.storage.model.Bucket bucketInfoEncode(BucketInfo bucketInfo) {
     com.google.api.services.storage.model.Bucket bucketPb =
         new com.google.api.services.storage.model.Bucket();
     bucketPb.setId(bucketInfo.getGeneratedId());
@@ -288,23 +383,23 @@ final class ApiaryConversions {
     if (bucketInfo.getCors() != null) {
       bucketPb.setCors(
           bucketInfo.getCors().stream()
-              .map((Function<Cors, Bucket.Cors>) ApiaryConversions::encode)
+              .map(cors()::encode)
               .collect(ImmutableList.toImmutableList()));
     }
     if (bucketInfo.getAcl() != null) {
       bucketPb.setAcl(
           bucketInfo.getAcl().stream()
-              .map(ApiaryConversions::encodeBucket)
+              .map(bucketAcl()::encode)
               .collect(ImmutableList.toImmutableList()));
     }
     if (bucketInfo.getDefaultAcl() != null) {
       bucketPb.setDefaultObjectAcl(
           bucketInfo.getDefaultAcl().stream()
-              .map(ApiaryConversions::encodeObject)
+              .map(objectAcl()::encode)
               .collect(ImmutableList.toImmutableList()));
     }
     if (bucketInfo.getOwner() != null) {
-      bucketPb.setOwner(new Bucket.Owner().setEntity(encode(bucketInfo.getOwner())));
+      bucketPb.setOwner(new Bucket.Owner().setEntity(entityEncode(bucketInfo.getOwner())));
     }
     bucketPb.setSelfLink(bucketInfo.getSelfLink());
     if (bucketInfo.versioningEnabled() != null) {
@@ -345,13 +440,13 @@ final class ApiaryConversions {
         if (deleteRules != null) {
           rules.addAll(
               deleteRules.stream()
-                  .map(ApiaryConversions::encode)
+                  .map(deleteRule()::encode)
                   .collect(ImmutableList.toImmutableList()));
         }
         if (lifecycleRules != null) {
           rules.addAll(
               lifecycleRules.stream()
-                  .map(ApiaryConversions::encode)
+                  .map(lifecycleRule()::encode)
                   .collect(ImmutableList.toImmutableList()));
         }
 
@@ -389,15 +484,16 @@ final class ApiaryConversions {
       }
     }
     if (bucketInfo.getIamConfiguration() != null) {
-      bucketPb.setIamConfiguration(encode(bucketInfo.getIamConfiguration()));
+      bucketPb.setIamConfiguration(iamConfigEncode(bucketInfo.getIamConfiguration()));
     }
     if (bucketInfo.getLogging() != null) {
-      bucketPb.setLogging(encode(bucketInfo.getLogging()));
+      bucketPb.setLogging(loggingEncode(bucketInfo.getLogging()));
     }
     return bucketPb;
   }
 
-  static BucketInfo decode(Bucket bucketPb) {
+  @SuppressWarnings("deprecation")
+  private BucketInfo bucketInfoDecode(com.google.api.services.storage.model.Bucket bucketPb) {
     BucketInfo.Builder builder = new BuilderImpl(bucketPb.getName());
     if (bucketPb.getId() != null) {
       builder.setGeneratedId(bucketPb.getId());
@@ -429,24 +525,22 @@ final class ApiaryConversions {
     }
     if (bucketPb.getCors() != null) {
       builder.setCors(
-          bucketPb.getCors().stream()
-              .map((Function<Bucket.Cors, Cors>) ApiaryConversions::decode)
-              .collect(ImmutableList.toImmutableList()));
+          bucketPb.getCors().stream().map(cors()::decode).collect(ImmutableList.toImmutableList()));
     }
     if (bucketPb.getAcl() != null) {
       builder.setAcl(
           bucketPb.getAcl().stream()
-              .map(ApiaryConversions::decode)
+              .map(bucketAcl()::decode)
               .collect(ImmutableList.toImmutableList()));
     }
     if (bucketPb.getDefaultObjectAcl() != null) {
       builder.setDefaultAcl(
           bucketPb.getDefaultObjectAcl().stream()
-              .map(ApiaryConversions::decode)
+              .map(objectAcl()::decode)
               .collect(ImmutableList.toImmutableList()));
     }
     if (bucketPb.getOwner() != null) {
-      builder.setOwner(decode(bucketPb.getOwner().getEntity()));
+      builder.setOwner(entityDecode(bucketPb.getOwner().getEntity()));
     }
     if (bucketPb.getVersioning() != null) {
       builder.setVersioningEnabled(bucketPb.getVersioning().getEnabled());
@@ -459,11 +553,11 @@ final class ApiaryConversions {
     if (bucketPb.getLifecycle() != null && bucketPb.getLifecycle().getRule() != null) {
       builder.setLifecycleRules(
           bucketPb.getLifecycle().getRule().stream()
-              .map(ApiaryConversions::decode)
+              .map(lifecycleRule()::decode)
               .collect(ImmutableList.toImmutableList()));
       builder.setDeleteRules(
           bucketPb.getLifecycle().getRule().stream()
-              .map(ApiaryConversions::decodeDeleteRule)
+              .map(deleteRule()::decode)
               .collect(ImmutableList.toImmutableList()));
     }
     if (bucketPb.getLabels() != null) {
@@ -501,16 +595,17 @@ final class ApiaryConversions {
     }
 
     if (iamConfiguration != null) {
-      builder.setIamConfiguration(fromPb(iamConfiguration));
+      builder.setIamConfiguration(iamConfigDecode(iamConfiguration));
     }
     Bucket.Logging logging = bucketPb.getLogging();
     if (logging != null) {
-      builder.setLogging(decode(logging));
+      builder.setLogging(loggingDecode(logging));
     }
     return builder.build();
   }
 
-  static Rule encode(DeleteRule deleteRule) {
+  @SuppressWarnings("deprecation")
+  private Rule deleteRuleEncode(DeleteRule deleteRule) {
     if (deleteRule instanceof RawDeleteRule) {
       RawDeleteRule rule = (RawDeleteRule) deleteRule;
       return rule.getRule();
@@ -524,7 +619,7 @@ final class ApiaryConversions {
   }
 
   @SuppressWarnings("deprecation")
-  static DeleteRule decodeDeleteRule(Rule rule) { // TODO: Name/type cleanup
+  private DeleteRule deleteRuleDecode(Rule rule) { // TODO: Name/type cleanup
     if (rule.getAction() != null
         && DeleteRule.SUPPORTED_ACTION.endsWith(rule.getAction().getType())) {
       Rule.Condition condition = rule.getCondition();
@@ -548,7 +643,7 @@ final class ApiaryConversions {
     return new RawDeleteRule(rule);
   }
 
-  static Bucket.IamConfiguration encode(IamConfiguration in) {
+  private Bucket.IamConfiguration iamConfigEncode(IamConfiguration in) {
     Bucket.IamConfiguration iamConfiguration = new Bucket.IamConfiguration();
 
     Bucket.IamConfiguration.UniformBucketLevelAccess uniformBucketLevelAccess =
@@ -566,7 +661,7 @@ final class ApiaryConversions {
     return iamConfiguration;
   }
 
-  static IamConfiguration fromPb(Bucket.IamConfiguration iamConfiguration) {
+  private IamConfiguration iamConfigDecode(Bucket.IamConfiguration iamConfiguration) {
     Bucket.IamConfiguration.UniformBucketLevelAccess uniformBucketLevelAccess =
         iamConfiguration.getUniformBucketLevelAccess();
     DateTime lockedTime = uniformBucketLevelAccess.getLockedTime();
@@ -584,7 +679,7 @@ final class ApiaryConversions {
         .build();
   }
 
-  static Rule encode(LifecycleRule lifecycleRule) {
+  private Rule lifecycleRuleEncode(LifecycleRule lifecycleRule) {
     Rule rule = new Rule();
 
     Rule.Action action =
@@ -642,7 +737,7 @@ final class ApiaryConversions {
     return rule;
   }
 
-  static LifecycleRule decode(Rule rule) {
+  private LifecycleRule lifecycleRuleDecode(Rule rule) {
     LifecycleAction lifecycleAction;
 
     Rule.Action action = rule.getAction();
@@ -688,7 +783,7 @@ final class ApiaryConversions {
     return new LifecycleRule(lifecycleAction, conditionBuilder.build());
   }
 
-  static Bucket.Logging encode(Logging in) {
+  private Bucket.Logging loggingEncode(Logging in) {
     Bucket.Logging logging;
     if (in.getLogBucket() != null || in.getLogObjectPrefix() != null) {
       logging = new Bucket.Logging();
@@ -700,14 +795,14 @@ final class ApiaryConversions {
     return logging;
   }
 
-  static Logging decode(Bucket.Logging logging) {
+  private Logging loggingDecode(Bucket.Logging logging) {
     return Logging.newBuilder()
         .setLogBucket(logging.getLogBucket())
         .setLogObjectPrefix(logging.getLogObjectPrefix())
         .build();
   }
 
-  static Bucket.Cors encode(Cors cors) {
+  private Bucket.Cors corsEncode(Cors cors) {
     Bucket.Cors pb = new Bucket.Cors();
     pb.setMaxAgeSeconds(cors.getMaxAgeSeconds());
     pb.setResponseHeader(cors.getResponseHeaders());
@@ -728,7 +823,7 @@ final class ApiaryConversions {
     return pb;
   }
 
-  static Cors decode(Bucket.Cors cors) {
+  private Cors corsDecode(Bucket.Cors cors) {
     Cors.Builder builder = Cors.newBuilder().setMaxAgeSeconds(cors.getMaxAgeSeconds());
     if (cors.getMethod() != null) {
       builder.setMethods(
@@ -745,7 +840,7 @@ final class ApiaryConversions {
     return builder.build();
   }
 
-  static com.google.api.services.storage.model.ServiceAccount encode(
+  private com.google.api.services.storage.model.ServiceAccount serviceAccountEncode(
       ServiceAccount serviceAccount) {
     com.google.api.services.storage.model.ServiceAccount serviceAccountPb =
         new com.google.api.services.storage.model.ServiceAccount();
@@ -753,29 +848,30 @@ final class ApiaryConversions {
     return serviceAccountPb;
   }
 
-  static ServiceAccount decode(com.google.api.services.storage.model.ServiceAccount accountPb) {
+  private ServiceAccount serviceAccountDecode(
+      com.google.api.services.storage.model.ServiceAccount accountPb) {
     return ServiceAccount.of(accountPb.getEmailAddress());
   }
 
-  static com.google.api.services.storage.model.HmacKey encode(HmacKey in) {
+  private com.google.api.services.storage.model.HmacKey hmacKeyEncode(HmacKey in) {
     com.google.api.services.storage.model.HmacKey hmacKey =
         new com.google.api.services.storage.model.HmacKey();
     hmacKey.setSecret(in.getSecretKey());
 
     if (in.getMetadata() != null) {
-      hmacKey.setMetadata(encode(in.getMetadata()));
+      hmacKey.setMetadata(hmacKeyMetadataEncode(in.getMetadata()));
     }
 
     return hmacKey;
   }
 
-  static HmacKey decode(com.google.api.services.storage.model.HmacKey hmacKey) {
+  private HmacKey hmacKeyDecode(com.google.api.services.storage.model.HmacKey hmacKey) {
     return HmacKey.newBuilder(hmacKey.getSecret())
-        .setMetadata(decode(hmacKey.getMetadata()))
+        .setMetadata(hmacKeyMetadataDecode(hmacKey.getMetadata()))
         .build();
   }
 
-  public static com.google.api.services.storage.model.HmacKeyMetadata encode(
+  private com.google.api.services.storage.model.HmacKeyMetadata hmacKeyMetadataEncode(
       HmacKeyMetadata hmacKeyMetadata) {
     com.google.api.services.storage.model.HmacKeyMetadata metadata =
         new com.google.api.services.storage.model.HmacKeyMetadata();
@@ -801,7 +897,8 @@ final class ApiaryConversions {
     return metadata;
   }
 
-  static HmacKeyMetadata decode(com.google.api.services.storage.model.HmacKeyMetadata metadata) {
+  private HmacKeyMetadata hmacKeyMetadataDecode(
+      com.google.api.services.storage.model.HmacKeyMetadata metadata) {
     return HmacKeyMetadata.newBuilder(ServiceAccount.of(metadata.getServiceAccountEmail()))
         .setAccessId(metadata.getAccessId())
         .setCreateTime(metadata.getTimeCreated().getValue())
@@ -813,7 +910,7 @@ final class ApiaryConversions {
         .build();
   }
 
-  static String encode(Entity e) {
+  private String entityEncode(Entity e) {
     if (e instanceof RawEntity) {
       return e.getValue();
     } else if (e instanceof User) {
@@ -831,7 +928,7 @@ final class ApiaryConversions {
     return e.getType().name().toLowerCase() + "-" + e.getValue();
   }
 
-  static Entity decode(String entityString) {
+  private Entity entityDecode(String entityString) {
     if (entityString.startsWith("user-")) {
       return new User(entityString.substring(5));
     }
@@ -856,25 +953,25 @@ final class ApiaryConversions {
     return new RawEntity(entityString);
   }
 
-  static Acl decode(ObjectAccessControl objectAccessControl) {
+  private Acl objectAclDecode(ObjectAccessControl objectAccessControl) {
     Role role = Role.valueOf(objectAccessControl.getRole());
-    Entity entity = decode(objectAccessControl.getEntity());
+    Entity entity = entityDecode(objectAccessControl.getEntity());
     return Acl.newBuilder(entity, role)
         .setEtag(objectAccessControl.getEtag())
         .setId(objectAccessControl.getId())
         .build();
   }
 
-  static Acl decode(BucketAccessControl bucketAccessControl) {
+  private Acl bucketAclDecode(BucketAccessControl bucketAccessControl) {
     Role role = Role.valueOf(bucketAccessControl.getRole());
-    Entity entity = decode(bucketAccessControl.getEntity());
+    Entity entity = entityDecode(bucketAccessControl.getEntity());
     return Acl.newBuilder(entity, role)
         .setEtag(bucketAccessControl.getEtag())
         .setId(bucketAccessControl.getId())
         .build();
   }
 
-  static BucketAccessControl encodeBucket(Acl acl) {
+  private BucketAccessControl bucketAclEncode(Acl acl) {
     BucketAccessControl bucketPb = new BucketAccessControl();
     bucketPb.setEntity(acl.getEntity().toString());
     bucketPb.setRole(acl.getRole().toString());
@@ -883,9 +980,9 @@ final class ApiaryConversions {
     return bucketPb;
   }
 
-  static ObjectAccessControl encodeObject(Acl acl) {
+  private ObjectAccessControl objectAclEncode(Acl acl) {
     ObjectAccessControl objectPb = new ObjectAccessControl();
-    objectPb.setEntity(encode(acl.getEntity()));
+    objectPb.setEntity(entityEncode(acl.getEntity()));
     objectPb.setRole(acl.getRole().name());
     objectPb.setId(acl.getId());
     objectPb.setEtag(acl.getEtag());

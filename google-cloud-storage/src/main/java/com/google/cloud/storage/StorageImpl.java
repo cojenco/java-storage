@@ -108,6 +108,8 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   private static final int DEFAULT_BUFFER_SIZE = 15 * 1024 * 1024;
   private static final int MIN_BUFFER_SIZE = 256 * 1024;
 
+  private static final ApiaryConversions codecs = Conversions.apiary();
+
   private final RetryAlgorithmManager retryAlgorithmManager;
   private final StorageRpc storageRpc;
 
@@ -120,12 +122,14 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   @Override
   public Bucket create(BucketInfo bucketInfo, BucketTargetOption... options) {
     final com.google.api.services.storage.model.Bucket bucketPb =
-        ApiaryConversions.encode(bucketInfo);
+        codecs.bucketInfo().encode(bucketInfo);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(bucketInfo, options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForBucketsCreate(bucketPb, optionsMap);
     return run(
-        algorithm, () -> storageRpc.create(bucketPb, optionsMap), (b) -> Bucket.fromPb(this, b));
+        algorithm,
+        () -> storageRpc.create(bucketPb, optionsMap),
+        (b) -> Bucket.decodeAndAttach(this, b));
   }
 
   @Override
@@ -176,7 +180,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   @Deprecated
   public Blob create(BlobInfo blobInfo, InputStream content, BlobWriteOption... options) {
     Tuple<BlobInfo, BlobTargetOption[]> targetOptions = BlobTargetOption.convert(blobInfo, options);
-    StorageObject blobPb = ApiaryConversions.encode(targetOptions.x());
+    StorageObject blobPb = codecs.blobInfo().encode(targetOptions.x());
     Map<StorageRpc.Option, ?> optionsMap = optionMap(targetOptions.x(), targetOptions.y());
     InputStream inputStreamParam =
         firstNonNull(content, new ByteArrayInputStream(EMPTY_BYTE_ARRAY));
@@ -191,7 +195,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
       final int length,
       BlobTargetOption... options) {
     Preconditions.checkNotNull(content);
-    final StorageObject blobPb = ApiaryConversions.encode(info);
+    final StorageObject blobPb = codecs.blobInfo().encode(info);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(info, options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForObjectsCreate(blobPb, optionsMap);
@@ -260,12 +264,14 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   @Override
   public Bucket get(String bucket, BucketGetOption... options) {
     final com.google.api.services.storage.model.Bucket bucketPb =
-        ApiaryConversions.encode(BucketInfo.of(bucket));
+        codecs.bucketInfo().encode(BucketInfo.of(bucket));
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForBucketsGet(bucketPb, optionsMap);
     return run(
-        algorithm, () -> storageRpc.get(bucketPb, optionsMap), (b) -> Bucket.fromPb(this, b));
+        algorithm,
+        () -> storageRpc.get(bucketPb, optionsMap),
+        (b) -> Bucket.decodeAndAttach(this, b));
   }
 
   @Override
@@ -275,7 +281,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public Blob get(BlobId blob, BlobGetOption... options) {
-    final StorageObject storedObject = ApiaryConversions.encode(blob);
+    final StorageObject storedObject = codecs.blobId().encode(blob);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(blob, options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForObjectsGet(storedObject, optionsMap);
@@ -379,7 +385,8 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
               result.y() == null
                   ? ImmutableList.of()
                   : Iterables.transform(
-                      result.y(), bucketPb -> Bucket.fromPb(serviceOptions.getService(), bucketPb));
+                      result.y(),
+                      bucketPb -> Bucket.decodeAndAttach(serviceOptions.getService(), bucketPb));
           return new PageImpl<>(
               new BucketPageFetcher(serviceOptions, cursor, optionsMap), cursor, buckets);
         });
@@ -412,17 +419,19 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   @Override
   public Bucket update(BucketInfo bucketInfo, BucketTargetOption... options) {
     final com.google.api.services.storage.model.Bucket bucketPb =
-        ApiaryConversions.encode(bucketInfo);
+        codecs.bucketInfo().encode(bucketInfo);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(bucketInfo, options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForBucketsUpdate(bucketPb, optionsMap);
     return run(
-        algorithm, () -> storageRpc.patch(bucketPb, optionsMap), (x) -> Bucket.fromPb(this, x));
+        algorithm,
+        () -> storageRpc.patch(bucketPb, optionsMap),
+        (x) -> Bucket.decodeAndAttach(this, x));
   }
 
   @Override
   public Blob update(BlobInfo blobInfo, BlobTargetOption... options) {
-    final StorageObject storageObject = ApiaryConversions.encode(blobInfo);
+    final StorageObject storageObject = codecs.blobInfo().encode(blobInfo);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(blobInfo, options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForObjectsUpdate(storageObject, optionsMap);
@@ -440,7 +449,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   @Override
   public boolean delete(String bucket, BucketSourceOption... options) {
     final com.google.api.services.storage.model.Bucket bucketPb =
-        ApiaryConversions.encode(BucketInfo.of(bucket));
+        codecs.bucketInfo().encode(BucketInfo.of(bucket));
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForBucketsDelete(bucketPb, optionsMap);
@@ -454,7 +463,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public boolean delete(BlobId blob, BlobSourceOption... options) {
-    final StorageObject storageObject = ApiaryConversions.encode(blob);
+    final StorageObject storageObject = codecs.blobId().encode(blob);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(blob, options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForObjectsDelete(storageObject, optionsMap);
@@ -472,15 +481,17 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
         Lists.newArrayListWithCapacity(composeRequest.getSourceBlobs().size());
     for (ComposeRequest.SourceBlob sourceBlob : composeRequest.getSourceBlobs()) {
       sources.add(
-          ApiaryConversions.encode(
-              BlobInfo.newBuilder(
-                      BlobId.of(
-                          composeRequest.getTarget().getBucket(),
-                          sourceBlob.getName(),
-                          sourceBlob.getGeneration()))
-                  .build()));
+          codecs
+              .blobInfo()
+              .encode(
+                  BlobInfo.newBuilder(
+                          BlobId.of(
+                              composeRequest.getTarget().getBucket(),
+                              sourceBlob.getName(),
+                              sourceBlob.getGeneration()))
+                      .build()));
     }
-    final StorageObject target = ApiaryConversions.encode(composeRequest.getTarget());
+    final StorageObject target = codecs.blobInfo().encode(composeRequest.getTarget());
     final Map<StorageRpc.Option, ?> targetOptions =
         optionMap(
             composeRequest.getTarget().getGeneration(),
@@ -496,11 +507,11 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public CopyWriter copy(final CopyRequest copyRequest) {
-    final StorageObject source = ApiaryConversions.encode(copyRequest.getSource());
+    final StorageObject source = codecs.blobId().encode(copyRequest.getSource());
     final Map<StorageRpc.Option, ?> sourceOptions =
         optionMap(
             copyRequest.getSource().getGeneration(), null, copyRequest.getSourceOptions(), true);
-    final StorageObject targetObject = ApiaryConversions.encode(copyRequest.getTarget());
+    final StorageObject targetObject = codecs.blobInfo().encode(copyRequest.getTarget());
     final Map<StorageRpc.Option, ?> targetOptions =
         optionMap(
             copyRequest.getTarget().getGeneration(),
@@ -528,7 +539,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public byte[] readAllBytes(BlobId blob, BlobSourceOption... options) {
-    final StorageObject storageObject = ApiaryConversions.encode(blob);
+    final StorageObject storageObject = codecs.blobId().encode(blob);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(blob, options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForObjectsGet(storageObject, optionsMap);
@@ -1063,11 +1074,11 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public Acl getAcl(final String bucket, final Entity entity, BucketSourceOption... options) {
-    String pb = ApiaryConversions.encode(entity);
+    String pb = codecs.entity().encode(entity);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForBucketAclGet(pb, optionsMap);
     return run(
-        algorithm, () -> storageRpc.getAcl(bucket, pb, optionsMap), ApiaryConversions::decode);
+        algorithm, () -> storageRpc.getAcl(bucket, pb, optionsMap), codecs.bucketAcl()::decode);
   }
 
   @Override
@@ -1078,7 +1089,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   @Override
   public boolean deleteAcl(
       final String bucket, final Entity entity, BucketSourceOption... options) {
-    final String pb = ApiaryConversions.encode(entity);
+    final String pb = codecs.entity().encode(entity);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForBucketAclDelete(pb, optionsMap);
     return run(algorithm, () -> storageRpc.deleteAcl(bucket, pb, optionsMap), Function.identity());
@@ -1091,11 +1102,12 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public Acl createAcl(String bucket, Acl acl, BucketSourceOption... options) {
-    final BucketAccessControl aclPb = ApiaryConversions.encodeBucket(acl).setBucket(bucket);
+    final BucketAccessControl aclPb = codecs.bucketAcl().encode(acl).setBucket(bucket);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForBucketAclCreate(aclPb, optionsMap);
-    return run(algorithm, () -> storageRpc.createAcl(aclPb, optionsMap), ApiaryConversions::decode);
+    return run(
+        algorithm, () -> storageRpc.createAcl(aclPb, optionsMap), codecs.bucketAcl()::decode);
   }
 
   @Override
@@ -1105,11 +1117,11 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public Acl updateAcl(String bucket, Acl acl, BucketSourceOption... options) {
-    final BucketAccessControl aclPb = ApiaryConversions.encodeBucket(acl).setBucket(bucket);
+    final BucketAccessControl aclPb = codecs.bucketAcl().encode(acl).setBucket(bucket);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForBucketAclUpdate(aclPb, optionsMap);
-    return run(algorithm, () -> storageRpc.patchAcl(aclPb, optionsMap), ApiaryConversions::decode);
+    return run(algorithm, () -> storageRpc.patchAcl(aclPb, optionsMap), codecs.bucketAcl()::decode);
   }
 
   @Override
@@ -1129,7 +1141,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
             answer.stream()
                 .map(
                     (com.google.common.base.Function<BucketAccessControl, Acl>)
-                        ApiaryConversions::decode)
+                        codecs.bucketAcl()::decode)
                 .collect(ImmutableList.toImmutableList()));
   }
 
@@ -1140,30 +1152,30 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public Acl getDefaultAcl(final String bucket, final Entity entity) {
-    String pb = ApiaryConversions.encode(entity);
+    String pb = codecs.entity().encode(entity);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForDefaultObjectAclGet(pb);
-    return run(algorithm, () -> storageRpc.getDefaultAcl(bucket, pb), ApiaryConversions::decode);
+    return run(algorithm, () -> storageRpc.getDefaultAcl(bucket, pb), codecs.objectAcl()::decode);
   }
 
   @Override
   public boolean deleteDefaultAcl(final String bucket, final Entity entity) {
-    String pb = ApiaryConversions.encode(entity);
+    String pb = codecs.entity().encode(entity);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForDefaultObjectAclDelete(pb);
     return run(algorithm, () -> storageRpc.deleteDefaultAcl(bucket, pb), Function.identity());
   }
 
   @Override
   public Acl createDefaultAcl(String bucket, Acl acl) {
-    final ObjectAccessControl aclPb = ApiaryConversions.encodeObject(acl).setBucket(bucket);
+    final ObjectAccessControl aclPb = codecs.objectAcl().encode(acl).setBucket(bucket);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForDefaultObjectAclCreate(aclPb);
-    return run(algorithm, () -> storageRpc.createDefaultAcl(aclPb), ApiaryConversions::decode);
+    return run(algorithm, () -> storageRpc.createDefaultAcl(aclPb), codecs.objectAcl()::decode);
   }
 
   @Override
   public Acl updateDefaultAcl(String bucket, Acl acl) {
-    final ObjectAccessControl aclPb = ApiaryConversions.encodeObject(acl).setBucket(bucket);
+    final ObjectAccessControl aclPb = codecs.objectAcl().encode(acl).setBucket(bucket);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForDefaultObjectAclUpdate(aclPb);
-    return run(algorithm, () -> storageRpc.patchDefaultAcl(aclPb), ApiaryConversions::decode);
+    return run(algorithm, () -> storageRpc.patchDefaultAcl(aclPb), codecs.objectAcl()::decode);
   }
 
   @Override
@@ -1176,7 +1188,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
             answer.stream()
                 .map(
                     (com.google.common.base.Function<ObjectAccessControl, Acl>)
-                        ApiaryConversions::decode)
+                        codecs.objectAcl()::decode)
                 .collect(ImmutableList.toImmutableList()));
   }
 
@@ -1185,13 +1197,13 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     String bucket = blob.getBucket();
     String name = blob.getName();
     Long generation = blob.getGeneration();
-    String pb = ApiaryConversions.encode(entity);
+    String pb = codecs.entity().encode(entity);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForObjectAclGet(bucket, name, generation, pb);
     return run(
         algorithm,
         () -> storageRpc.getAcl(bucket, name, generation, pb),
-        ApiaryConversions::decode);
+        codecs.objectAcl()::decode);
   }
 
   @Override
@@ -1199,7 +1211,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     String bucket = blob.getBucket();
     String name = blob.getName();
     Long generation = blob.getGeneration();
-    String pb = ApiaryConversions.encode(entity);
+    String pb = codecs.entity().encode(entity);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForObjectAclDelete(bucket, name, generation, pb);
     return run(
@@ -1209,23 +1221,27 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   @Override
   public Acl createAcl(final BlobId blob, final Acl acl) {
     final ObjectAccessControl aclPb =
-        ApiaryConversions.encodeObject(acl)
+        codecs
+            .objectAcl()
+            .encode(acl)
             .setBucket(blob.getBucket())
             .setObject(blob.getName())
             .setGeneration(blob.getGeneration());
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForObjectAclCreate(aclPb);
-    return run(algorithm, () -> storageRpc.createAcl(aclPb), ApiaryConversions::decode);
+    return run(algorithm, () -> storageRpc.createAcl(aclPb), codecs.objectAcl()::decode);
   }
 
   @Override
   public Acl updateAcl(BlobId blob, Acl acl) {
     final ObjectAccessControl aclPb =
-        ApiaryConversions.encodeObject(acl)
+        codecs
+            .objectAcl()
+            .encode(acl)
             .setBucket(blob.getBucket())
             .setObject(blob.getName())
             .setGeneration(blob.getGeneration());
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForObjectAclUpdate(aclPb);
-    return run(algorithm, () -> storageRpc.patchAcl(aclPb), ApiaryConversions::decode);
+    return run(algorithm, () -> storageRpc.patchAcl(aclPb), codecs.objectAcl()::decode);
   }
 
   @Override
@@ -1242,7 +1258,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
             answer.stream()
                 .map(
                     (com.google.common.base.Function<ObjectAccessControl, Acl>)
-                        ApiaryConversions::decode)
+                        codecs.objectAcl()::decode)
                 .collect(ImmutableList.toImmutableList()));
   }
 
@@ -1251,8 +1267,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     String pb = serviceAccount.getEmail();
     Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForHmacKeyCreate(pb, optionsMap);
-    return run(
-        algorithm, () -> storageRpc.createHmacKey(pb, optionsMap), ApiaryConversions::decode);
+    return run(algorithm, () -> storageRpc.createHmacKey(pb, optionsMap), codecs.hmacKey()::decode);
   }
 
   @Override
@@ -1268,17 +1283,19 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     return run(
         algorithm,
         () -> storageRpc.getHmacKey(accessId, optionMap(options)),
-        ApiaryConversions::decode);
+        codecs.hmacKeyMetadata()::decode);
   }
 
   private HmacKeyMetadata updateHmacKey(
       final HmacKeyMetadata hmacKeyMetadata, final UpdateHmacKeyOption... options) {
     com.google.api.services.storage.model.HmacKeyMetadata pb =
-        ApiaryConversions.encode(hmacKeyMetadata);
+        codecs.hmacKeyMetadata().encode(hmacKeyMetadata);
     Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForHmacKeyUpdate(pb, optionsMap);
     return run(
-        algorithm, () -> storageRpc.updateHmacKey(pb, optionsMap), ApiaryConversions::decode);
+        algorithm,
+        () -> storageRpc.updateHmacKey(pb, optionsMap),
+        codecs.hmacKeyMetadata()::decode);
   }
 
   @Override
@@ -1297,7 +1314,8 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
 
   @Override
   public void deleteHmacKey(final HmacKeyMetadata metadata, final DeleteHmacKeyOption... options) {
-    com.google.api.services.storage.model.HmacKeyMetadata pb = ApiaryConversions.encode(metadata);
+    com.google.api.services.storage.model.HmacKeyMetadata pb =
+        codecs.hmacKeyMetadata().encode(metadata);
     Map<StorageRpc.Option, ?> optionsMap = optionMap(options);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForHmacKeyDelete(pb, optionsMap);
     run(
@@ -1324,7 +1342,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
           final Iterable<HmacKeyMetadata> metadata =
               result.y() == null
                   ? ImmutableList.of()
-                  : Iterables.transform(result.y(), ApiaryConversions::decode);
+                  : Iterables.transform(result.y(), codecs.hmacKeyMetadata()::decode);
           return new PageImpl<>(
               new HmacKeyMetadataPageFetcher(serviceOptions, retryAlgorithmManager, options),
               cursor,
@@ -1379,20 +1397,21 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   @Override
   public Bucket lockRetentionPolicy(BucketInfo bucketInfo, BucketTargetOption... options) {
     final com.google.api.services.storage.model.Bucket bucketPb =
-        ApiaryConversions.encode(bucketInfo);
+        codecs.bucketInfo().encode(bucketInfo);
     final Map<StorageRpc.Option, ?> optionsMap = optionMap(bucketInfo, options);
     ResultRetryAlgorithm<?> algorithm =
         retryAlgorithmManager.getForBucketsLockRetentionPolicy(bucketPb, optionsMap);
     return run(
         algorithm,
         () -> storageRpc.lockRetentionPolicy(bucketPb, optionsMap),
-        (x) -> Bucket.fromPb(this, x));
+        (x) -> Bucket.decodeAndAttach(this, x));
   }
 
   @Override
   public ServiceAccount getServiceAccount(final String projectId) {
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForServiceAccountGet(projectId);
-    return run(algorithm, () -> storageRpc.getServiceAccount(projectId), ApiaryConversions::decode);
+    return run(
+        algorithm, () -> storageRpc.getServiceAccount(projectId), codecs.serviceAccount()::decode);
   }
 
   private <T, U> U run(ResultRetryAlgorithm<?> algorithm, Callable<T> c, Function<T, U> f) {

@@ -53,10 +53,15 @@ public final class ServiceAccount implements Serializable {
 
   @Override
   public boolean equals(Object obj) {
-    return obj == this
-        || obj instanceof ServiceAccount
-            && Objects.equals(
-                ApiaryConversions.encode(this), ApiaryConversions.encode(((ServiceAccount) obj)));
+    if (obj == this) {
+      return true;
+    }
+    if (!(obj instanceof ServiceAccount)) {
+      return false;
+    }
+    return Objects.equals(
+        Conversions.apiary().serviceAccount().encode(this),
+        Conversions.apiary().serviceAccount().encode((ServiceAccount) obj));
   }
 
   /** Returns a {@code ServiceAccount} object for the provided email. */

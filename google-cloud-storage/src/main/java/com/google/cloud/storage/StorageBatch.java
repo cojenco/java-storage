@@ -100,7 +100,7 @@ public class StorageBatch {
     StorageBatchResult<Boolean> result = new StorageBatchResult<>();
     RpcBatch.Callback<Void> callback = createDeleteCallback(result);
     Map<StorageRpc.Option, ?> optionMap = StorageImpl.optionMap(blob, options);
-    batch.addDelete(ApiaryConversions.encode(blob), callback, optionMap);
+    batch.addDelete(Conversions.apiary().blobId().encode(blob), callback, optionMap);
     return result;
   }
 
@@ -114,7 +114,7 @@ public class StorageBatch {
     StorageBatchResult<Blob> result = new StorageBatchResult<>();
     RpcBatch.Callback<StorageObject> callback = createUpdateCallback(this.options, result);
     Map<StorageRpc.Option, ?> optionMap = StorageImpl.optionMap(blobInfo, options);
-    batch.addPatch(ApiaryConversions.encode(blobInfo), callback, optionMap);
+    batch.addPatch(Conversions.apiary().blobInfo().encode(blobInfo), callback, optionMap);
     return result;
   }
 
@@ -140,7 +140,7 @@ public class StorageBatch {
     StorageBatchResult<Blob> result = new StorageBatchResult<>();
     RpcBatch.Callback<StorageObject> callback = createGetCallback(this.options, result);
     Map<StorageRpc.Option, ?> optionMap = StorageImpl.optionMap(blob, options);
-    batch.addGet(ApiaryConversions.encode(blob), callback, optionMap);
+    batch.addGet(Conversions.apiary().blobId().encode(blob), callback, optionMap);
     return result;
   }
 

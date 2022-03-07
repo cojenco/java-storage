@@ -91,7 +91,10 @@ public class BlobReadChannelTest {
     ByteBuffer secondReadBuffer = ByteBuffer.allocate(42);
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(BLOB_ID), EMPTY_RPC_OPTIONS, 0, DEFAULT_CHUNK_SIZE))
+                Conversions.apiary().blobId().encode(BLOB_ID),
+                EMPTY_RPC_OPTIONS,
+                0,
+                DEFAULT_CHUNK_SIZE))
         .andReturn(Tuple.of("etag", result));
     replay(storageRpcMock);
     reader.read(firstReadBuffer);
@@ -115,11 +118,14 @@ public class BlobReadChannelTest {
     ByteBuffer secondReadBuffer = ByteBuffer.allocate(42);
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(BLOB_ID), EMPTY_RPC_OPTIONS, 0, DEFAULT_CHUNK_SIZE))
+                Conversions.apiary().blobId().encode(BLOB_ID),
+                EMPTY_RPC_OPTIONS,
+                0,
+                DEFAULT_CHUNK_SIZE))
         .andReturn(Tuple.of("etag", firstResult));
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(BLOB_ID),
+                Conversions.apiary().blobId().encode(BLOB_ID),
                 EMPTY_RPC_OPTIONS,
                 DEFAULT_CHUNK_SIZE,
                 CUSTOM_CHUNK_SIZE))
@@ -139,7 +145,10 @@ public class BlobReadChannelTest {
     ByteBuffer readBuffer = ByteBuffer.allocate(DEFAULT_CHUNK_SIZE);
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(BLOB_ID), EMPTY_RPC_OPTIONS, 0, DEFAULT_CHUNK_SIZE))
+                Conversions.apiary().blobId().encode(BLOB_ID),
+                EMPTY_RPC_OPTIONS,
+                0,
+                DEFAULT_CHUNK_SIZE))
         .andReturn(Tuple.of("etag", result));
     replay(storageRpcMock);
     assertEquals(-1, reader.read(readBuffer));
@@ -153,7 +162,10 @@ public class BlobReadChannelTest {
     ByteBuffer readBuffer = ByteBuffer.allocate(DEFAULT_CHUNK_SIZE);
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(BLOB_ID), EMPTY_RPC_OPTIONS, 42, DEFAULT_CHUNK_SIZE))
+                Conversions.apiary().blobId().encode(BLOB_ID),
+                EMPTY_RPC_OPTIONS,
+                42,
+                DEFAULT_CHUNK_SIZE))
         .andReturn(Tuple.of("etag", result));
     replay(storageRpcMock);
     reader.read(readBuffer);
@@ -193,11 +205,14 @@ public class BlobReadChannelTest {
     ByteBuffer secondReadBuffer = ByteBuffer.allocate(DEFAULT_CHUNK_SIZE);
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(blobId), EMPTY_RPC_OPTIONS, 0, DEFAULT_CHUNK_SIZE))
+                Conversions.apiary().blobId().encode(blobId),
+                EMPTY_RPC_OPTIONS,
+                0,
+                DEFAULT_CHUNK_SIZE))
         .andReturn(Tuple.of("etag1", firstResult));
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(blobId),
+                Conversions.apiary().blobId().encode(blobId),
                 EMPTY_RPC_OPTIONS,
                 DEFAULT_CHUNK_SIZE,
                 DEFAULT_CHUNK_SIZE))
@@ -222,11 +237,17 @@ public class BlobReadChannelTest {
     ByteBuffer secondReadBuffer = ByteBuffer.allocate(DEFAULT_CHUNK_SIZE);
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(BLOB_ID), EMPTY_RPC_OPTIONS, 0, DEFAULT_CHUNK_SIZE))
+                Conversions.apiary().blobId().encode(BLOB_ID),
+                EMPTY_RPC_OPTIONS,
+                0,
+                DEFAULT_CHUNK_SIZE))
         .andReturn(Tuple.of("etag", firstResult));
     expect(
             storageRpcMock.read(
-                ApiaryConversions.encode(BLOB_ID), EMPTY_RPC_OPTIONS, 42, DEFAULT_CHUNK_SIZE))
+                Conversions.apiary().blobId().encode(BLOB_ID),
+                EMPTY_RPC_OPTIONS,
+                42,
+                DEFAULT_CHUNK_SIZE))
         .andReturn(Tuple.of("etag", secondResult));
     replay(storageRpcMock);
     reader = new BlobReadChannel(options, BLOB_ID, EMPTY_RPC_OPTIONS);

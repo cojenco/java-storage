@@ -138,13 +138,16 @@ public class BlobInfo implements Serializable {
     }
 
     @Override
-    public final boolean equals(Object obj) {
-      return obj == this
-          || obj != null
-              && obj.getClass().equals(CustomerEncryption.class)
-              && Objects.equals(
-                  ApiaryConversions.encode(this),
-                  ApiaryConversions.encode(((CustomerEncryption) obj)));
+    public final boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof CustomerEncryption)) {
+        return false;
+      }
+      CustomerEncryption that = (CustomerEncryption) o;
+      return Objects.equals(encryptionAlgorithm, that.encryptionAlgorithm)
+          && Objects.equals(keySha256, that.keySha256);
     }
   }
 
@@ -1033,9 +1036,10 @@ public class BlobInfo implements Serializable {
         || obj != null
             && obj.getClass().equals(BlobInfo.class)
             && Objects.equals(
-                ApiaryConversions.encode(this),
-                ApiaryConversions.encode(
-                    ((BlobInfo) obj))); // TODO: remove this excessive allocation
+                Conversions.apiary().blobInfo().encode(this),
+                Conversions.apiary()
+                    .blobInfo()
+                    .encode(((BlobInfo) obj))); // TODO: remove this excessive allocation
   }
 
   /** Returns a {@code BlobInfo} builder where blob identity is set using the provided values. */

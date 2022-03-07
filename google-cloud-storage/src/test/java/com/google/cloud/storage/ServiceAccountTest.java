@@ -32,7 +32,10 @@ public class ServiceAccountTest {
   @Test
   public void testToAndFromPb() {
     compareServiceAccount(
-        SERVICE_ACCOUNT, ApiaryConversions.decode(ApiaryConversions.encode(SERVICE_ACCOUNT)));
+        SERVICE_ACCOUNT,
+        Conversions.apiary()
+            .serviceAccount()
+            .decode(Conversions.apiary().serviceAccount().encode(SERVICE_ACCOUNT)));
   }
 
   public void compareServiceAccount(ServiceAccount expected, ServiceAccount value) {

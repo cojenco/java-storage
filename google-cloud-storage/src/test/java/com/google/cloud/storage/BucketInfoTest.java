@@ -243,14 +243,22 @@ public class BucketInfoTest {
   @Test
   @SuppressWarnings({"unchecked", "deprecation"})
   public void testToPbAndFromPb() {
-    compareBuckets(BUCKET_INFO, ApiaryConversions.decode(ApiaryConversions.encode(BUCKET_INFO)));
+    compareBuckets(
+        BUCKET_INFO,
+        Conversions.apiary()
+            .bucketInfo()
+            .decode(Conversions.apiary().bucketInfo().encode(BUCKET_INFO)));
     BucketInfo bucketInfo =
         BucketInfo.newBuilder("b")
             .setDeleteRules(DELETE_RULES)
             .setLifecycleRules(LIFECYCLE_RULES)
             .setLogging(LOGGING)
             .build();
-    compareBuckets(bucketInfo, ApiaryConversions.decode(ApiaryConversions.encode(bucketInfo)));
+    compareBuckets(
+        bucketInfo,
+        Conversions.apiary()
+            .bucketInfo()
+            .decode(Conversions.apiary().bucketInfo().encode(bucketInfo)));
   }
 
   @SuppressWarnings({"unchecked", "deprecation"})
@@ -312,34 +320,43 @@ public class BucketInfoTest {
     ImmutableList<DeleteRule> rules =
         ImmutableList.of(ageRule, createBeforeRule, versionsRule, isLiveRule, rawRule);
     for (DeleteRule delRule : rules) {
-      assertEquals(delRule, ApiaryConversions.decodeDeleteRule(ApiaryConversions.encode(delRule)));
+      assertEquals(
+          delRule,
+          Conversions.apiary()
+              .deleteRule()
+              .decode(Conversions.apiary().deleteRule().encode(delRule)));
     }
     Rule unsupportedRule =
         new Rule().setAction(new Rule.Action().setType("This action doesn't exist"));
-    ApiaryConversions.decodeDeleteRule(
-        unsupportedRule); // if this doesn't throw an exception, unsupported rules work
+    Conversions.apiary()
+        .deleteRule()
+        .decode(unsupportedRule); // if this doesn't throw an exception, unsupported rules work
   }
 
   @Test
   public void testLifecycleRules() {
     Rule deleteLifecycleRule =
-        ApiaryConversions.encode(
-            new LifecycleRule(
-                LifecycleAction.newDeleteAction(),
-                LifecycleCondition.newBuilder().setAge(10).build()));
+        Conversions.apiary()
+            .lifecycleRule()
+            .encode(
+                new LifecycleRule(
+                    LifecycleAction.newDeleteAction(),
+                    LifecycleCondition.newBuilder().setAge(10).build()));
 
     assertEquals(
         LifecycleRule.DeleteLifecycleAction.TYPE, deleteLifecycleRule.getAction().getType());
     assertEquals(10, deleteLifecycleRule.getCondition().getAge().intValue());
 
     Rule setStorageClassLifecycleRule =
-        ApiaryConversions.encode(
-            new LifecycleRule(
-                LifecycleAction.newSetStorageClassAction(StorageClass.COLDLINE),
-                LifecycleCondition.newBuilder()
-                    .setIsLive(true)
-                    .setNumberOfNewerVersions(10)
-                    .build()));
+        Conversions.apiary()
+            .lifecycleRule()
+            .encode(
+                new LifecycleRule(
+                    LifecycleAction.newSetStorageClassAction(StorageClass.COLDLINE),
+                    LifecycleCondition.newBuilder()
+                        .setIsLive(true)
+                        .setNumberOfNewerVersions(10)
+                        .build()));
 
     assertEquals(
         StorageClass.COLDLINE.toString(),
@@ -348,17 +365,19 @@ public class BucketInfoTest {
     assertEquals(10, setStorageClassLifecycleRule.getCondition().getNumNewerVersions().intValue());
 
     Rule lifecycleRule =
-        ApiaryConversions.encode(
-            new LifecycleRule(
-                LifecycleAction.newSetStorageClassAction(StorageClass.COLDLINE),
-                LifecycleCondition.newBuilder()
-                    .setIsLive(true)
-                    .setNumberOfNewerVersions(10)
-                    .setDaysSinceNoncurrentTime(30)
-                    .setNoncurrentTimeBefore(new DateTime(System.currentTimeMillis()))
-                    .setCustomTimeBefore(new DateTime(System.currentTimeMillis()))
-                    .setDaysSinceCustomTime(30)
-                    .build()));
+        Conversions.apiary()
+            .lifecycleRule()
+            .encode(
+                new LifecycleRule(
+                    LifecycleAction.newSetStorageClassAction(StorageClass.COLDLINE),
+                    LifecycleCondition.newBuilder()
+                        .setIsLive(true)
+                        .setNumberOfNewerVersions(10)
+                        .setDaysSinceNoncurrentTime(30)
+                        .setNoncurrentTimeBefore(new DateTime(System.currentTimeMillis()))
+                        .setCustomTimeBefore(new DateTime(System.currentTimeMillis()))
+                        .setDaysSinceCustomTime(30)
+                        .build()));
     assertEquals(StorageClass.COLDLINE.toString(), lifecycleRule.getAction().getStorageClass());
     assertTrue(lifecycleRule.getCondition().getIsLive());
     assertEquals(10, lifecycleRule.getCondition().getNumNewerVersions().intValue());
@@ -369,26 +388,32 @@ public class BucketInfoTest {
     assertNotNull(lifecycleRule.getCondition().getCustomTimeBefore());
 
     Rule unsupportedRule =
-        ApiaryConversions.encode(
-            new LifecycleRule(
-                LifecycleAction.newLifecycleAction("This action type doesn't exist"),
-                LifecycleCondition.newBuilder().setAge(10).build()));
+        Conversions.apiary()
+            .lifecycleRule()
+            .encode(
+                new LifecycleRule(
+                    LifecycleAction.newLifecycleAction("This action type doesn't exist"),
+                    LifecycleCondition.newBuilder().setAge(10).build()));
     unsupportedRule.setAction(
         unsupportedRule.getAction().setType("This action type also doesn't exist"));
 
-    ApiaryConversions.decode(
-        unsupportedRule); // If this doesn't throw an exception, unsupported rules are working
+    Conversions.apiary()
+        .lifecycleRule()
+        .decode(
+            unsupportedRule); // If this doesn't throw an exception, unsupported rules are working
   }
 
   @Test
   public void testIamConfiguration() {
     Bucket.IamConfiguration iamConfiguration =
-        ApiaryConversions.encode(
-            IamConfiguration.newBuilder()
-                .setIsUniformBucketLevelAccessEnabled(true)
-                .setUniformBucketLevelAccessLockedTime(System.currentTimeMillis())
-                .setPublicAccessPrevention(PublicAccessPrevention.ENFORCED)
-                .build());
+        Conversions.apiary()
+            .iamConfiguration()
+            .encode(
+                IamConfiguration.newBuilder()
+                    .setIsUniformBucketLevelAccessEnabled(true)
+                    .setUniformBucketLevelAccessLockedTime(System.currentTimeMillis())
+                    .setPublicAccessPrevention(PublicAccessPrevention.ENFORCED)
+                    .build());
 
     assertEquals(Boolean.TRUE, iamConfiguration.getUniformBucketLevelAccess().getEnabled());
     assertNotNull(iamConfiguration.getUniformBucketLevelAccess().getLockedTime());
@@ -404,12 +429,14 @@ public class BucketInfoTest {
         JacksonFactory.getDefaultInstance().createJsonGenerator(stringWriter);
 
     jsonGenerator.serialize(
-        ApiaryConversions.encode(
-            IamConfiguration.newBuilder()
-                .setIsUniformBucketLevelAccessEnabled(true)
-                .setUniformBucketLevelAccessLockedTime(System.currentTimeMillis())
-                .setPublicAccessPrevention(PublicAccessPrevention.UNKNOWN)
-                .build()));
+        Conversions.apiary()
+            .iamConfiguration()
+            .encode(
+                IamConfiguration.newBuilder()
+                    .setIsUniformBucketLevelAccessEnabled(true)
+                    .setUniformBucketLevelAccessLockedTime(System.currentTimeMillis())
+                    .setPublicAccessPrevention(PublicAccessPrevention.UNKNOWN)
+                    .build()));
     jsonGenerator.flush();
 
     assertFalse(stringWriter.getBuffer().toString().contains("publicAccessPrevention"));
@@ -422,7 +449,7 @@ public class BucketInfoTest {
         new Bucket.IamConfiguration.UniformBucketLevelAccess();
     iamConfiguration.setUniformBucketLevelAccess(uniformBucketLevelAccess);
     iamConfiguration.setPublicAccessPrevention("random-string");
-    IamConfiguration fromPb = ApiaryConversions.fromPb(iamConfiguration);
+    IamConfiguration fromPb = Conversions.apiary().iamConfiguration().decode(iamConfiguration);
 
     assertEquals(PublicAccessPrevention.UNKNOWN, fromPb.getPublicAccessPrevention());
   }
@@ -430,31 +457,33 @@ public class BucketInfoTest {
   @Test
   public void testLogging() {
     Bucket.Logging logging =
-        ApiaryConversions.encode(
-            BucketInfo.Logging.newBuilder()
-                .setLogBucket("test-bucket")
-                .setLogObjectPrefix("test-")
-                .build());
+        Conversions.apiary()
+            .logging()
+            .encode(
+                BucketInfo.Logging.newBuilder()
+                    .setLogBucket("test-bucket")
+                    .setLogObjectPrefix("test-")
+                    .build());
     assertEquals("test-bucket", logging.getLogBucket());
     assertEquals("test-", logging.getLogObjectPrefix());
   }
 
   @Test
   public void testRuleMappingIsCorrect_noMutations() {
-    Bucket bucket = ApiaryConversions.encode(bi().build());
+    Bucket bucket = Conversions.apiary().bucketInfo().encode(bi().build());
     assertNull(bucket.getLifecycle());
   }
 
   @Test
   public void testRuleMappingIsCorrect_deleteLifecycleRules() {
-    Bucket bucket = ApiaryConversions.encode(bi().deleteLifecycleRules().build());
+    Bucket bucket = Conversions.apiary().bucketInfo().encode(bi().deleteLifecycleRules().build());
     assertEquals(EMPTY_LIFECYCLE, bucket.getLifecycle());
   }
 
   @Test
   @SuppressWarnings({"deprecation"})
   public void testRuleMappingIsCorrect_setDeleteRules_null() {
-    Bucket bucket = ApiaryConversions.encode(bi().setDeleteRules(null).build());
+    Bucket bucket = Conversions.apiary().bucketInfo().encode(bi().setDeleteRules(null).build());
     assertNull(bucket.getLifecycle());
   }
 
@@ -462,15 +491,18 @@ public class BucketInfoTest {
   @SuppressWarnings({"deprecation"})
   public void testRuleMappingIsCorrect_setDeleteRules_empty() {
     Bucket bucket =
-        ApiaryConversions.encode(bi().setDeleteRules(Collections.<DeleteRule>emptyList()).build());
+        Conversions.apiary()
+            .bucketInfo()
+            .encode(bi().setDeleteRules(Collections.<DeleteRule>emptyList()).build());
     assertEquals(EMPTY_LIFECYCLE, bucket.getLifecycle());
   }
 
   @Test
   public void testRuleMappingIsCorrect_setLifecycleRules_empty() {
     Bucket bucket =
-        ApiaryConversions.encode(
-            bi().setLifecycleRules(Collections.<LifecycleRule>emptyList()).build());
+        Conversions.apiary()
+            .bucketInfo()
+            .encode(bi().setLifecycleRules(Collections.<LifecycleRule>emptyList()).build());
     assertEquals(EMPTY_LIFECYCLE, bucket.getLifecycle());
   }
 
@@ -479,9 +511,11 @@ public class BucketInfoTest {
     LifecycleRule lifecycleRule =
         new LifecycleRule(
             LifecycleAction.newDeleteAction(), LifecycleCondition.newBuilder().setAge(10).build());
-    Rule lifecycleDeleteAfter10 = ApiaryConversions.encode(lifecycleRule);
+    Rule lifecycleDeleteAfter10 = Conversions.apiary().lifecycleRule().encode(lifecycleRule);
     Bucket bucket =
-        ApiaryConversions.encode(bi().setLifecycleRules(ImmutableList.of(lifecycleRule)).build());
+        Conversions.apiary()
+            .bucketInfo()
+            .encode(bi().setLifecycleRules(ImmutableList.of(lifecycleRule)).build());
     assertEquals(lifecycle(lifecycleDeleteAfter10), bucket.getLifecycle());
   }
 
@@ -489,9 +523,11 @@ public class BucketInfoTest {
   @SuppressWarnings({"deprecation"})
   public void testRuleMappingIsCorrect_setDeleteRules_nonEmpty() {
     DeleteRule deleteRule = DELETE_RULES.get(0);
-    Rule deleteRuleAge5 = ApiaryConversions.encode(deleteRule);
+    Rule deleteRuleAge5 = Conversions.apiary().deleteRule().encode(deleteRule);
     Bucket bucket =
-        ApiaryConversions.encode(bi().setDeleteRules(ImmutableList.of(deleteRule)).build());
+        Conversions.apiary()
+            .bucketInfo()
+            .encode(bi().setDeleteRules(ImmutableList.of(deleteRule)).build());
     assertEquals(lifecycle(deleteRuleAge5), bucket.getLifecycle());
   }
 

@@ -78,8 +78,9 @@ public class BucketInfo implements Serializable {
   private final Logging logging;
 
   /**
-   * non-private for backward compatibility on message class. log messages is now emitted from
-   * {@link ApiaryConversions#decode(Rule)}
+   * non-private for backward compatibility on message class. log messages are now emitted from
+   *
+   * @see ApiaryConversions#lifecycleRule()
    */
   static final Logger log = Logger.getLogger(BucketInfo.class.getName());
 
@@ -151,7 +152,9 @@ public class BucketInfo implements Serializable {
         return false;
       }
       IamConfiguration other = (IamConfiguration) o;
-      return Objects.equals(ApiaryConversions.encode(this), ApiaryConversions.encode(other));
+      return Objects.equals(
+          Conversions.apiary().iamConfiguration().encode(this),
+          Conversions.apiary().iamConfiguration().encode(other));
     }
 
     @Override
@@ -286,7 +289,9 @@ public class BucketInfo implements Serializable {
         return false;
       }
       Logging other = (Logging) o;
-      return Objects.equals(ApiaryConversions.encode(this), ApiaryConversions.encode(other));
+      return Objects.equals(
+          Conversions.apiary().logging().encode(this),
+          Conversions.apiary().logging().encode(other));
     }
 
     @Override
@@ -410,7 +415,9 @@ public class BucketInfo implements Serializable {
         return false;
       }
       final LifecycleRule other = (LifecycleRule) obj;
-      return Objects.equals(ApiaryConversions.encode(this), ApiaryConversions.encode(other));
+      return Objects.equals(
+          Conversions.apiary().lifecycleRule().encode(this),
+          Conversions.apiary().lifecycleRule().encode(other));
     }
 
     LifecycleAction getLifecycleAction() {
@@ -772,7 +779,9 @@ public class BucketInfo implements Serializable {
         return false;
       }
       final DeleteRule other = (DeleteRule) obj;
-      return Objects.equals(ApiaryConversions.encode(this), ApiaryConversions.encode(other));
+      return Objects.equals(
+          Conversions.apiary().deleteRule().encode(this),
+          Conversions.apiary().deleteRule().encode(other));
     }
 
     abstract void populateCondition(Rule.Condition condition);
@@ -1698,13 +1707,19 @@ public class BucketInfo implements Serializable {
     return Objects.hash(name);
   }
 
+  // TODO: This equals and hashCode are broken. They don't validate the same properties!!!
   @Override
-  public boolean equals(Object obj) {
-    return obj == this
-        || obj != null
-            && obj.getClass().equals(BucketInfo.class)
-            && Objects.equals(
-                ApiaryConversions.encode(this), ApiaryConversions.encode(((BucketInfo) obj)));
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o.getClass().equals(BucketInfo.class))) {
+      return false;
+    }
+    BucketInfo that = (BucketInfo) o;
+    return Objects.equals(
+        Conversions.apiary().bucketInfo().encode(this),
+        Conversions.apiary().bucketInfo().encode(that));
   }
 
   @Override

@@ -247,7 +247,7 @@ public class Blob extends BlobInfo {
   public void downloadTo(OutputStream outputStream, BlobSourceOption... options) {
     final CountingOutputStream countingOutputStream = new CountingOutputStream(outputStream);
     final StorageRpc storageRpc = this.options.getStorageRpcV1();
-    StorageObject pb = ApiaryConversions.encode(getBlobId());
+    StorageObject pb = Conversions.apiary().blobId().encode(getBlobId());
     final Map<StorageRpc.Option, ?> requestOptions = StorageImpl.optionMap(getBlobId(), options);
     ResultRetryAlgorithm<?> algorithm = retryAlgorithmManager.getForObjectsGet(pb, requestOptions);
     Retrying.run(
@@ -937,7 +937,9 @@ public class Blob extends BlobInfo {
       return false;
     }
     Blob other = (Blob) obj;
-    return Objects.equals(ApiaryConversions.encode(this), ApiaryConversions.encode(other))
+    return Objects.equals(
+            Conversions.apiary().blobInfo().encode(this),
+            Conversions.apiary().blobInfo().encode(other))
         && Objects.equals(options, other.options);
   }
 
@@ -953,7 +955,7 @@ public class Blob extends BlobInfo {
 
   // TODO: not really decode, decode and attach. Refactor
   static Blob decodeAndAttach(Storage storage, StorageObject storageObject) {
-    BlobInfo info = ApiaryConversions.decode(storageObject);
+    BlobInfo info = Conversions.apiary().blobInfo().decode(storageObject);
     return new Blob(storage, new BlobInfo.BuilderImpl(info));
   }
 }

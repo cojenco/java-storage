@@ -66,6 +66,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 final class ApiaryConversions {
   static final ApiaryConversions INSTANCE = new ApiaryConversions();
@@ -102,6 +103,36 @@ final class ApiaryConversions {
       Codec.of(this::blobInfoEncode, this::blobInfoDecode);
 
   private ApiaryConversions() {}
+
+  enum Codecs {
+    blobId(ApiaryConversions::blobId),
+    blobInfo(ApiaryConversions::blobInfo),
+    bucketAcl(ApiaryConversions::bucketAcl),
+    bucketInfo(ApiaryConversions::bucketInfo),
+    cors(ApiaryConversions::cors),
+    customerEncryption(ApiaryConversions::customerEncryption),
+    deleteRule(ApiaryConversions::deleteRule),
+    entity(ApiaryConversions::entity),
+    hmacKey(ApiaryConversions::hmacKey),
+    hmacKeyMetadata(ApiaryConversions::hmacKeyMetadata),
+    iamConfiguration(ApiaryConversions::iamConfiguration),
+    lifecycleRule(ApiaryConversions::lifecycleRule),
+    logging(ApiaryConversions::logging),
+    objectAcl(ApiaryConversions::objectAcl),
+    serviceAccount(ApiaryConversions::serviceAccount),
+    ;
+
+    private final Function<ApiaryConversions, Codec<?, ?>> handle;
+
+    Codecs(
+        Function<ApiaryConversions, Codec<?, ?>> handle) {
+      this.handle = handle;
+    }
+
+    <X, Y> Codec<X, Y> getHandle(ApiaryConversions con) {
+      return (Codec<X, Y>) handle.apply(con);
+    }
+  }
 
   Codec<Entity, String> entity() {
     return entityCodec;

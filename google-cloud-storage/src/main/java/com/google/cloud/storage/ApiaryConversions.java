@@ -66,7 +66,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 
 final class ApiaryConversions {
   static final ApiaryConversions INSTANCE = new ApiaryConversions();
@@ -103,36 +102,6 @@ final class ApiaryConversions {
       Codec.of(this::blobInfoEncode, this::blobInfoDecode);
 
   private ApiaryConversions() {}
-
-  enum Codecs {
-    blobId(ApiaryConversions::blobId),
-    blobInfo(ApiaryConversions::blobInfo),
-    bucketAcl(ApiaryConversions::bucketAcl),
-    bucketInfo(ApiaryConversions::bucketInfo),
-    cors(ApiaryConversions::cors),
-    customerEncryption(ApiaryConversions::customerEncryption),
-    deleteRule(ApiaryConversions::deleteRule),
-    entity(ApiaryConversions::entity),
-    hmacKey(ApiaryConversions::hmacKey),
-    hmacKeyMetadata(ApiaryConversions::hmacKeyMetadata),
-    iamConfiguration(ApiaryConversions::iamConfiguration),
-    lifecycleRule(ApiaryConversions::lifecycleRule),
-    logging(ApiaryConversions::logging),
-    objectAcl(ApiaryConversions::objectAcl),
-    serviceAccount(ApiaryConversions::serviceAccount),
-    ;
-
-    private final Function<ApiaryConversions, Codec<?, ?>> handle;
-
-    Codecs(
-        Function<ApiaryConversions, Codec<?, ?>> handle) {
-      this.handle = handle;
-    }
-
-    <X, Y> Codec<X, Y> getHandle(ApiaryConversions con) {
-      return (Codec<X, Y>) handle.apply(con);
-    }
-  }
 
   Codec<Entity, String> entity() {
     return entityCodec;
@@ -228,7 +197,8 @@ final class ApiaryConversions {
       storageObject.setTimeStorageClassUpdated(new DateTime(blobInfo.getTimeStorageClassUpdated()));
     }
 
-    Map<String, String> pbMetadata = blobInfo.getMetadata();
+    // Do not use, #getMetadata(), it can not return null, which is important to our logic here
+    Map<String, String> pbMetadata = blobInfo.metadata;
     if (blobInfo.getMetadata() != null && !Data.isNull(blobInfo.getMetadata())) {
       pbMetadata = Maps.newHashMapWithExpectedSize(blobInfo.getMetadata().size());
       for (Map.Entry<String, String> entry : blobInfo.getMetadata().entrySet()) {

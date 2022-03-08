@@ -57,12 +57,13 @@ public class BucketInfo implements Serializable {
   private final String notFoundPage;
   private final List<DeleteRule> deleteRules;
   /**
-   * The getter for this property never returns null, however null awareness is critical for encoding
-   * to properly determine how to process rules conversion.
+   * The getter for this property never returns null, however null awareness is critical for
+   * encoding to properly determine how to process rules conversion.
    *
    * @see ApiaryConversions#bucketInfo() encoder
    */
   final List<LifecycleRule> lifecycleRules;
+
   private final String etag;
   private final Long createTime;
   private final Long updateTime;

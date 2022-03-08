@@ -70,7 +70,14 @@ public class BlobInfo implements Serializable {
   private final String crc32c;
   private final Long customTime;
   private final String mediaLink;
-  private final Map<String, String> metadata;
+  /**
+   * The getter for this property never returns null, however null awareness is critical for
+   * encoding
+   *
+   * @see ApiaryConversions#blobInfo() encoder
+   */
+  final Map<String, String> metadata;
+
   private final Long metageneration;
   private final Long deleteTime;
   private final Long updateTime;

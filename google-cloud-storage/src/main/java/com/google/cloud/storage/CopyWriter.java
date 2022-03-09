@@ -71,7 +71,8 @@ public class CopyWriter implements Restorable<CopyWriter> {
     while (!isDone()) {
       copyChunk();
     }
-    return Blob.decodeAndAttach(serviceOptions.getService(), rewriteResponse.result);
+    BlobInfo info = Conversions.apiary().blobInfo().decode(rewriteResponse.result);
+    return info.asBlob(serviceOptions.getService());
   }
 
   /** Returns the size of the blob being copied. */

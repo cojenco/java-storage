@@ -1249,9 +1249,4 @@ public class Bucket extends BucketInfo {
     this.storage = options.getService();
   }
 
-  static Bucket decodeAndAttach(
-      Storage storage, com.google.api.services.storage.model.Bucket bucketPb) {
-    return new Bucket(
-        storage, new BucketInfo.BuilderImpl(Conversions.apiary().bucketInfo().decode(bucketPb)));
-  }
 }

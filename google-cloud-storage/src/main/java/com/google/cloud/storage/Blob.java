@@ -953,9 +953,4 @@ public class Blob extends BlobInfo {
     this.storage = options.getService();
   }
 
-  // TODO: not really decode, decode and attach. Refactor
-  static Blob decodeAndAttach(Storage storage, StorageObject storageObject) {
-    BlobInfo info = Conversions.apiary().blobInfo().decode(storageObject);
-    return new Blob(storage, new BlobInfo.BuilderImpl(info));
-  }
 }

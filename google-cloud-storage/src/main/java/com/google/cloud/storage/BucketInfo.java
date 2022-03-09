@@ -1734,6 +1734,14 @@ public class BucketInfo implements Serializable {
     return MoreObjects.toStringHelper(this).add("name", name).toString();
   }
 
+  /**
+   * Attach this instance to an instance of {@link Storage} thereby allowing RPCs to be performed
+   * using the methods from the resulting {@link Bucket}
+   */
+  Bucket asBucket(Storage storage) {
+    return new Bucket(storage, new BucketInfo.BuilderImpl(this));
+  }
+
   /** Creates a {@code BucketInfo} object for the provided bucket name. */
   public static BucketInfo of(String name) {
     return newBuilder(name).build();

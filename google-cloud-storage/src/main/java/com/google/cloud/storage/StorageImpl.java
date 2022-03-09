@@ -129,7 +129,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     return run(
         algorithm,
         () -> storageRpc.create(bucketPb, optionsMap),
-        (b) -> Bucket.decodeAndAttach(this, b));
+        (b) -> Conversions.apiary().bucketInfo().decode(b).asBucket(this));
   }
 
   @Override
@@ -185,7 +185,9 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     InputStream inputStreamParam =
         firstNonNull(content, new ByteArrayInputStream(EMPTY_BYTE_ARRAY));
     // retries are not safe when the input is an InputStream, so we can't retry.
-    return Blob.decodeAndAttach(this, storageRpc.create(blobPb, inputStreamParam, optionsMap));
+    BlobInfo info = Conversions.apiary().blobInfo().decode(
+        storageRpc.create(blobPb, inputStreamParam, optionsMap));
+    return info.asBlob(this);
   }
 
   private Blob internalCreate(
@@ -204,7 +206,10 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
         () ->
             storageRpc.create(
                 blobPb, new ByteArrayInputStream(content, offset, length), optionsMap),
-        (x) -> Blob.decodeAndAttach(this, x));
+        (x) -> {
+          BlobInfo info1 = Conversions.apiary().blobInfo().decode(x);
+          return info1.asBlob(this);
+        });
   }
 
   @Override
@@ -241,7 +246,8 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
       uploadHelper(Channels.newChannel(content), writer, bufferSize);
     }
     StorageObject objectProto = blobWriteChannel.getStorageObject();
-    return Blob.decodeAndAttach(this, objectProto);
+    BlobInfo info = Conversions.apiary().blobInfo().decode(objectProto);
+    return info.asBlob(this);
   }
 
   /*
@@ -271,7 +277,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     return run(
         algorithm,
         () -> storageRpc.get(bucketPb, optionsMap),
-        (b) -> Bucket.decodeAndAttach(this, b));
+        (b) -> Conversions.apiary().bucketInfo().decode(b).asBucket(this));
   }
 
   @Override
@@ -288,7 +294,10 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     return run(
         algorithm,
         () -> storageRpc.get(storedObject, optionsMap),
-        (x) -> Blob.decodeAndAttach(this, x));
+        (x) -> {
+          BlobInfo info = Conversions.apiary().blobInfo().decode(x);
+          return info.asBlob(this);
+        });
   }
 
   @Override
@@ -386,7 +395,8 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
                   ? ImmutableList.of()
                   : Iterables.transform(
                       result.y(),
-                      bucketPb -> Bucket.decodeAndAttach(serviceOptions.getService(), bucketPb));
+                      bucketPb -> Conversions.apiary().bucketInfo().decode(bucketPb).asBucket(
+                          serviceOptions.getService()));
           return new PageImpl<>(
               new BucketPageFetcher(serviceOptions, cursor, optionsMap), cursor, buckets);
         });
@@ -409,8 +419,10 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
                   ? ImmutableList.of()
                   : Iterables.transform(
                       result.y(),
-                      storageObject ->
-                          Blob.decodeAndAttach(serviceOptions.getService(), storageObject));
+                      storageObject -> {
+                        BlobInfo info = Conversions.apiary().blobInfo().decode(storageObject);
+                        return info.asBlob(serviceOptions.getService());
+                      });
           return new PageImpl<>(
               new BlobPageFetcher(bucket, serviceOptions, cursor, optionsMap), cursor, blobs);
         });
@@ -426,7 +438,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     return run(
         algorithm,
         () -> storageRpc.patch(bucketPb, optionsMap),
-        (x) -> Bucket.decodeAndAttach(this, x));
+        (x) -> Conversions.apiary().bucketInfo().decode(x).asBucket(this));
   }
 
   @Override
@@ -438,7 +450,10 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     return run(
         algorithm,
         () -> storageRpc.patch(storageObject, optionsMap),
-        (x) -> Blob.decodeAndAttach(this, x));
+        (x) -> {
+          BlobInfo info = Conversions.apiary().blobInfo().decode(x);
+          return info.asBlob(this);
+        });
   }
 
   @Override
@@ -502,7 +517,10 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     return run(
         algorithm,
         () -> storageRpc.compose(sources, target, targetOptions),
-        (x) -> Blob.decodeAndAttach(this, x));
+        (x) -> {
+          BlobInfo info = Conversions.apiary().blobInfo().decode(x);
+          return info.asBlob(this);
+        });
   }
 
   @Override
@@ -1404,7 +1422,7 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     return run(
         algorithm,
         () -> storageRpc.lockRetentionPolicy(bucketPb, optionsMap),
-        (x) -> Bucket.decodeAndAttach(this, x));
+        (x) -> Conversions.apiary().bucketInfo().decode(x).asBucket(this));
   }
 
   @Override

@@ -1049,6 +1049,14 @@ public class BlobInfo implements Serializable {
                     .encode(((BlobInfo) obj))); // TODO: remove this excessive allocation
   }
 
+  /**
+   * Attach this instance to an instance of {@link Storage} thereby allowing RPCs to be performed
+   * using the methods from the resulting {@link Blob}
+   */
+  Blob asBlob(Storage storage) {
+    return new Blob(storage, new BuilderImpl(this));
+  }
+
   /** Returns a {@code BlobInfo} builder where blob identity is set using the provided values. */
   public static Builder newBuilder(BucketInfo bucketInfo, String name) {
     return newBuilder(bucketInfo.getName(), name);

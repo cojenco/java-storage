@@ -173,8 +173,9 @@ public class StorageBatch {
     return new RpcBatch.Callback<StorageObject>() {
       @Override
       public void onSuccess(StorageObject response) {
+        BlobInfo info = Conversions.apiary().blobInfo().decode(response);
         result.success(
-            response == null ? null : Blob.decodeAndAttach(serviceOptions.getService(), response));
+            response == null ? null : info.asBlob(serviceOptions.getService()));
       }
 
       @Override
@@ -194,8 +195,9 @@ public class StorageBatch {
     return new RpcBatch.Callback<StorageObject>() {
       @Override
       public void onSuccess(StorageObject response) {
+        BlobInfo info = Conversions.apiary().blobInfo().decode(response);
         result.success(
-            response == null ? null : Blob.decodeAndAttach(serviceOptions.getService(), response));
+            response == null ? null : info.asBlob(serviceOptions.getService()));
       }
 
       @Override

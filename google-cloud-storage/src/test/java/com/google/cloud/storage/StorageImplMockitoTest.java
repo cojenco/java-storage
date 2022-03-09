@@ -1077,7 +1077,8 @@ public class StorageImplMockitoTest {
         .writeWithResponse(uploadId, buffer, 0, 0L, bytes.length, true);
 
     initializeService();
-    expectedUpdated = Blob.decodeAndAttach(storage, storageObject);
+    BlobInfo info = Conversions.apiary().blobInfo().decode(storageObject);
+    expectedUpdated = info.asBlob(storage);
     return blobInfo;
   }
 
@@ -1212,7 +1213,8 @@ public class StorageImplMockitoTest {
 
     InputStream input = new ByteArrayInputStream(dataToSend);
     Blob blob = storage.createFrom(info, input, MIN_BUFFER_SIZE);
-    assertEquals(Blob.decodeAndAttach(storage, storageObject), blob);
+    BlobInfo info1 = Conversions.apiary().blobInfo().decode(storageObject);
+    assertEquals(info1.asBlob(storage), blob);
   }
 
   @Test

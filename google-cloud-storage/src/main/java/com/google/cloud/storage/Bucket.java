@@ -1248,5 +1248,4 @@ public class Bucket extends BucketInfo {
     in.defaultReadObject();
     this.storage = options.getService();
   }
-
 }

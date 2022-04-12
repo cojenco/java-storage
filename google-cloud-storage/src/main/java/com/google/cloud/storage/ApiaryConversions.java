@@ -16,15 +16,22 @@
 
 package com.google.cloud.storage;
 
+import static com.google.cloud.storage.Utils.ifNonNull;
+import static com.google.cloud.storage.Utils.lift;
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static com.google.common.collect.Lists.newArrayList;
 
 import com.google.api.client.util.Data;
 import com.google.api.client.util.DateTime;
+import com.google.api.core.InternalApi;
 import com.google.api.services.storage.model.Bucket;
+import com.google.api.services.storage.model.Bucket.Billing;
 import com.google.api.services.storage.model.Bucket.Encryption;
+import com.google.api.services.storage.model.Bucket.IamConfiguration.UniformBucketLevelAccess;
 import com.google.api.services.storage.model.Bucket.Lifecycle;
 import com.google.api.services.storage.model.Bucket.Lifecycle.Rule;
+import com.google.api.services.storage.model.Bucket.Lifecycle.Rule.Action;
+import com.google.api.services.storage.model.Bucket.Lifecycle.Rule.Condition;
+import com.google.api.services.storage.model.Bucket.RetentionPolicy;
 import com.google.api.services.storage.model.Bucket.Versioning;
 import com.google.api.services.storage.model.Bucket.Website;
 import com.google.api.services.storage.model.BucketAccessControl;
@@ -66,39 +73,44 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
+@InternalApi
 final class ApiaryConversions {
   static final ApiaryConversions INSTANCE = new ApiaryConversions();
 
-  final Codec<Entity, String> entityCodec = Codec.of(this::entityEncode, this::entityDecode);
-  final Codec<Acl, ObjectAccessControl> objectAclCodec =
+  private final Codec<Entity, String> entityCodec =
+      Codec.of(this::entityEncode, this::entityDecode);
+  private final Codec<Acl, ObjectAccessControl> objectAclCodec =
       Codec.of(this::objectAclEncode, this::objectAclDecode);
-  final Codec<Acl, BucketAccessControl> bucketAclCodec =
+  private final Codec<Acl, BucketAccessControl> bucketAclCodec =
       Codec.of(this::bucketAclEncode, this::bucketAclDecode);
-  final Codec<HmacKeyMetadata, com.google.api.services.storage.model.HmacKeyMetadata>
+  private final Codec<HmacKeyMetadata, com.google.api.services.storage.model.HmacKeyMetadata>
       hmacKeyMetadataCodec = Codec.of(this::hmacKeyMetadataEncode, this::hmacKeyMetadataDecode);
-  final Codec<HmacKey, com.google.api.services.storage.model.HmacKey> hmacKeyCodec =
+  private final Codec<HmacKey, com.google.api.services.storage.model.HmacKey> hmacKeyCodec =
       Codec.of(this::hmacKeyEncode, this::hmacKeyDecode);
-  final Codec<ServiceAccount, com.google.api.services.storage.model.ServiceAccount>
+  private final Codec<ServiceAccount, com.google.api.services.storage.model.ServiceAccount>
       serviceAccountCodec = Codec.of(this::serviceAccountEncode, this::serviceAccountDecode);
-  final Codec<Cors, Bucket.Cors> corsCodec = Codec.of(this::corsEncode, this::corsDecode);
-  final Codec<Logging, Bucket.Logging> loggingCodec =
+  private final Codec<Cors, Bucket.Cors> corsCodec = Codec.of(this::corsEncode, this::corsDecode);
+  private final Codec<Logging, Bucket.Logging> loggingCodec =
       Codec.of(this::loggingEncode, this::loggingDecode);
-  final Codec<IamConfiguration, Bucket.IamConfiguration> iamConfigurationCodec =
+  private final Codec<IamConfiguration, Bucket.IamConfiguration> iamConfigurationCodec =
       Codec.of(this::iamConfigEncode, this::iamConfigDecode);
-  final Codec<LifecycleRule, Rule> lifecycleRuleCodec =
+  private final Codec<LifecycleRule, Rule> lifecycleRuleCodec =
       Codec.of(this::lifecycleRuleEncode, this::lifecycleRuleDecode);
 
   @SuppressWarnings("deprecation")
-  final Codec<DeleteRule, Rule> deleteRuleCodec =
+  private final Codec<DeleteRule, Rule> deleteRuleCodec =
       Codec.of(this::deleteRuleEncode, this::deleteRuleDecode);
 
-  final Codec<BucketInfo, Bucket> bucketInfoCodec =
+  private final Codec<BucketInfo, Bucket> bucketInfoCodec =
       Codec.of(this::bucketInfoEncode, this::bucketInfoDecode);
-  final Codec<CustomerEncryption, StorageObject.CustomerEncryption> customerEncryptionCodec =
-      Codec.of(this::customerEncryptionEncode, this::customerEncryptionDecode);
-  final Codec<BlobId, StorageObject> blobIdCodec = Codec.of(this::blobIdEncode, this::blobIdDecode);
-  final Codec<BlobInfo, StorageObject> blobInfoCodec =
+  private final Codec<CustomerEncryption, StorageObject.CustomerEncryption>
+      customerEncryptionCodec =
+          Codec.of(this::customerEncryptionEncode, this::customerEncryptionDecode);
+  private final Codec<BlobId, StorageObject> blobIdCodec =
+      Codec.of(this::blobIdEncode, this::blobIdDecode);
+  private final Codec<BlobInfo, StorageObject> blobInfoCodec =
       Codec.of(this::blobInfoEncode, this::blobInfoDecode);
 
   private ApiaryConversions() {}
@@ -164,264 +176,147 @@ final class ApiaryConversions {
     return blobInfoCodec;
   }
 
-  private StorageObject blobInfoEncode(BlobInfo blobInfo) {
-    StorageObject storageObject = blobIdEncode(blobInfo.getBlobId());
-    if (blobInfo.getAcl() != null) {
-      storageObject.setAcl(
-          blobInfo.getAcl().stream()
-              .map(objectAcl()::encode)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (blobInfo.getDeleteTime() != null) {
-      storageObject.setTimeDeleted(new DateTime(blobInfo.getDeleteTime()));
-    }
-    if (blobInfo.getUpdateTime() != null) {
-      storageObject.setUpdated(new DateTime(blobInfo.getUpdateTime()));
-    }
-    if (blobInfo.getCreateTime() != null) {
-      storageObject.setTimeCreated(new DateTime(blobInfo.getCreateTime()));
-    }
-    if (blobInfo.getCustomTime() != null) {
-      storageObject.setCustomTime(new DateTime(blobInfo.getCustomTime()));
-    }
-    if (blobInfo.getSize() != null) {
-      storageObject.setSize(BigInteger.valueOf(blobInfo.getSize()));
-    }
-    if (blobInfo.getOwner() != null) {
-      storageObject.setOwner(new Owner().setEntity(entityEncode(blobInfo.getOwner())));
-    }
-    if (blobInfo.getStorageClass() != null) {
-      storageObject.setStorageClass(blobInfo.getStorageClass().toString());
-    }
-    if (blobInfo.getTimeStorageClassUpdated() != null) {
-      storageObject.setTimeStorageClassUpdated(new DateTime(blobInfo.getTimeStorageClassUpdated()));
-    }
-
+  private StorageObject blobInfoEncode(BlobInfo from) {
+    StorageObject to = blobIdEncode(from.getBlobId());
+    ifNonNull(from.getAcl(), toImmutableListOf(objectAcl()::encode), to::setAcl);
+    ifNonNull(from.getDeleteTime(), DateTime::new, to::setTimeDeleted);
+    ifNonNull(from.getUpdateTime(), DateTime::new, to::setUpdated);
+    ifNonNull(from.getCreateTime(), DateTime::new, to::setTimeCreated);
+    ifNonNull(from.getCustomTime(), DateTime::new, to::setCustomTime);
+    ifNonNull(from.getSize(), BigInteger::valueOf, to::setSize);
+    ifNonNull(
+        from.getOwner(),
+        lift(this::entityEncode).andThen(o -> new Owner().setEntity(o)),
+        to::setOwner);
+    ifNonNull(from.getStorageClass(), StorageClass::toString, to::setStorageClass);
+    ifNonNull(from.getTimeStorageClassUpdated(), DateTime::new, to::setTimeStorageClassUpdated);
+    ifNonNull(
+        from.getCustomerEncryption(), this::customerEncryptionEncode, to::setCustomerEncryption);
+    ifNonNull(from.getRetentionExpirationTime(), DateTime::new, to::setRetentionExpirationTime);
+    to.setKmsKeyName(from.getKmsKeyName());
+    to.setEventBasedHold(from.getEventBasedHold());
+    to.setTemporaryHold(from.getTemporaryHold());
     // Do not use, #getMetadata(), it can not return null, which is important to our logic here
-    Map<String, String> pbMetadata = blobInfo.metadata;
-    if (blobInfo.getMetadata() != null && !Data.isNull(blobInfo.getMetadata())) {
-      pbMetadata = Maps.newHashMapWithExpectedSize(blobInfo.getMetadata().size());
-      for (Map.Entry<String, String> entry : blobInfo.getMetadata().entrySet()) {
+    Map<String, String> pbMetadata = from.metadata;
+    if (pbMetadata != null && !Data.isNull(pbMetadata)) {
+      pbMetadata = Maps.newHashMapWithExpectedSize(from.getMetadata().size());
+      for (Map.Entry<String, String> entry : from.getMetadata().entrySet()) {
         pbMetadata.put(entry.getKey(), firstNonNull(entry.getValue(), Data.nullOf(String.class)));
       }
     }
-    if (blobInfo.getCustomerEncryption() != null) {
-      storageObject.setCustomerEncryption(
-          customerEncryptionEncode(blobInfo.getCustomerEncryption()));
-    }
-    if (blobInfo.getRetentionExpirationTime() != null) {
-      storageObject.setRetentionExpirationTime(new DateTime(blobInfo.getRetentionExpirationTime()));
-    }
-    storageObject.setKmsKeyName(blobInfo.getKmsKeyName());
-    storageObject.setEventBasedHold(blobInfo.getEventBasedHold());
-    storageObject.setTemporaryHold(blobInfo.getTemporaryHold());
-    storageObject.setMetadata(pbMetadata);
-    storageObject.setCacheControl(blobInfo.getCacheControl());
-    storageObject.setContentEncoding(blobInfo.getContentEncoding());
-    storageObject.setCrc32c(blobInfo.getCrc32c());
-    storageObject.setContentType(blobInfo.getContentType());
-    storageObject.setMd5Hash(blobInfo.getMd5());
-    storageObject.setMediaLink(blobInfo.getMediaLink());
-    storageObject.setMetageneration(blobInfo.getMetageneration());
-    storageObject.setContentDisposition(blobInfo.getContentDisposition());
-    storageObject.setComponentCount(blobInfo.getComponentCount());
-    storageObject.setContentLanguage(blobInfo.getContentLanguage());
-    storageObject.setEtag(blobInfo.getEtag());
-    storageObject.setId(blobInfo.getGeneratedId());
-    storageObject.setSelfLink(blobInfo.getSelfLink());
-    return storageObject;
+    to.setMetadata(pbMetadata);
+    to.setCacheControl(from.getCacheControl());
+    to.setContentEncoding(from.getContentEncoding());
+    to.setCrc32c(from.getCrc32c());
+    to.setContentType(from.getContentType());
+    to.setMd5Hash(from.getMd5());
+    to.setMediaLink(from.getMediaLink());
+    to.setMetageneration(from.getMetageneration());
+    to.setContentDisposition(from.getContentDisposition());
+    to.setComponentCount(from.getComponentCount());
+    to.setContentLanguage(from.getContentLanguage());
+    to.setEtag(from.getEtag());
+    to.setId(from.getGeneratedId());
+    to.setSelfLink(from.getSelfLink());
+    return to;
   }
 
-  private BlobInfo blobInfoDecode(StorageObject storageObject) {
-    BlobInfo.Builder builder = BlobInfo.newBuilder(blobIdDecode(storageObject));
-    if (storageObject.getCacheControl() != null) {
-      builder.setCacheControl(storageObject.getCacheControl());
+  private BlobInfo blobInfoDecode(StorageObject from) {
+    BlobInfo.Builder to = BlobInfo.newBuilder(blobIdDecode(from));
+    ifNonNull(from.getCacheControl(), to::setCacheControl);
+    ifNonNull(from.getContentEncoding(), to::setContentEncoding);
+    ifNonNull(from.getCrc32c(), to::setCrc32c);
+    ifNonNull(from.getContentType(), to::setContentType);
+    ifNonNull(from.getMd5Hash(), to::setMd5);
+    ifNonNull(from.getMediaLink(), to::setMediaLink);
+    ifNonNull(from.getMetageneration(), to::setMetageneration);
+    ifNonNull(from.getContentDisposition(), to::setContentDisposition);
+    ifNonNull(from.getComponentCount(), to::setComponentCount);
+    ifNonNull(from.getContentLanguage(), to::setContentLanguage);
+    ifNonNull(from.getEtag(), to::setEtag);
+    ifNonNull(from.getId(), to::setGeneratedId);
+    ifNonNull(from.getSelfLink(), to::setSelfLink);
+    ifNonNull(from.getMetadata(), to::setMetadata);
+    ifNonNull(from.getTimeDeleted(), DateTime::getValue, to::setDeleteTime);
+    ifNonNull(from.getUpdated(), DateTime::getValue, to::setUpdateTime);
+    ifNonNull(from.getTimeCreated(), DateTime::getValue, to::setCreateTime);
+    ifNonNull(from.getCustomTime(), DateTime::getValue, to::setCustomTime);
+    ifNonNull(from.getSize(), BigInteger::longValue, to::setSize);
+    ifNonNull(from.getOwner(), lift(Owner::getEntity).andThen(this::entityDecode), to::setOwner);
+    ifNonNull(from.getAcl(), toImmutableListOf(objectAcl()::decode), to::setAcl);
+    if (from.containsKey("isDirectory")) {
+      to.setIsDirectory(Boolean.TRUE);
     }
-    if (storageObject.getContentEncoding() != null) {
-      builder.setContentEncoding(storageObject.getContentEncoding());
-    }
-    if (storageObject.getCrc32c() != null) {
-      builder.setCrc32c(storageObject.getCrc32c());
-    }
-    if (storageObject.getContentType() != null) {
-      builder.setContentType(storageObject.getContentType());
-    }
-    if (storageObject.getMd5Hash() != null) {
-      builder.setMd5(storageObject.getMd5Hash());
-    }
-    if (storageObject.getMediaLink() != null) {
-      builder.setMediaLink(storageObject.getMediaLink());
-    }
-    if (storageObject.getMetageneration() != null) {
-      builder.setMetageneration(storageObject.getMetageneration());
-    }
-    if (storageObject.getContentDisposition() != null) {
-      builder.setContentDisposition(storageObject.getContentDisposition());
-    }
-    if (storageObject.getComponentCount() != null) {
-      builder.setComponentCount(storageObject.getComponentCount());
-    }
-    if (storageObject.getContentLanguage() != null) {
-      builder.setContentLanguage(storageObject.getContentLanguage());
-    }
-    if (storageObject.getEtag() != null) {
-      builder.setEtag(storageObject.getEtag());
-    }
-    if (storageObject.getId() != null) {
-      builder.setGeneratedId(storageObject.getId());
-    }
-    if (storageObject.getSelfLink() != null) {
-      builder.setSelfLink(storageObject.getSelfLink());
-    }
-    if (storageObject.getMetadata() != null) {
-      builder.setMetadata(storageObject.getMetadata());
-    }
-    if (storageObject.getTimeDeleted() != null) {
-      builder.setDeleteTime(storageObject.getTimeDeleted().getValue());
-    }
-    if (storageObject.getUpdated() != null) {
-      builder.setUpdateTime(storageObject.getUpdated().getValue());
-    }
-    if (storageObject.getTimeCreated() != null) {
-      builder.setCreateTime(storageObject.getTimeCreated().getValue());
-    }
-    if (storageObject.getCustomTime() != null) {
-      builder.setCustomTime(storageObject.getCustomTime().getValue());
-    }
-    if (storageObject.getSize() != null) {
-      builder.setSize(storageObject.getSize().longValue());
-    }
-    if (storageObject.getOwner() != null) {
-      builder.setOwner(entityDecode(storageObject.getOwner().getEntity()));
-    }
-    if (storageObject.getAcl() != null) {
-      builder.setAcl(
-          storageObject.getAcl().stream()
-              .map(objectAcl()::decode)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (storageObject.containsKey("isDirectory")) {
-      builder.setIsDirectory(Boolean.TRUE);
-    }
-    if (storageObject.getCustomerEncryption() != null) {
-      builder.setCustomerEncryption(
-          customerEncryptionDecode(storageObject.getCustomerEncryption()));
-    }
-    if (storageObject.getStorageClass() != null) {
-      builder.setStorageClass(StorageClass.valueOf(storageObject.getStorageClass()));
-    }
-    if (storageObject.getTimeStorageClassUpdated() != null) {
-      builder.setTimeStorageClassUpdated(storageObject.getTimeStorageClassUpdated().getValue());
-    }
-    if (storageObject.getKmsKeyName() != null) {
-      builder.setKmsKeyName(storageObject.getKmsKeyName());
-    }
-    if (storageObject.getEventBasedHold() != null) {
-      builder.setEventBasedHold(storageObject.getEventBasedHold());
-    }
-    if (storageObject.getTemporaryHold() != null) {
-      builder.setTemporaryHold(storageObject.getTemporaryHold());
-    }
-    if (storageObject.getRetentionExpirationTime() != null) {
-      builder.setRetentionExpirationTime(storageObject.getRetentionExpirationTime().getValue());
-    }
-    return builder.build();
+    ifNonNull(
+        from.getCustomerEncryption(), this::customerEncryptionDecode, to::setCustomerEncryption);
+    ifNonNull(from.getStorageClass(), StorageClass::valueOf, to::setStorageClass);
+    ifNonNull(
+        from.getTimeStorageClassUpdated(), DateTime::getValue, to::setTimeStorageClassUpdated);
+    ifNonNull(from.getKmsKeyName(), to::setKmsKeyName);
+    ifNonNull(from.getEventBasedHold(), to::setEventBasedHold);
+    ifNonNull(from.getTemporaryHold(), to::setTemporaryHold);
+    ifNonNull(
+        from.getRetentionExpirationTime(), DateTime::getValue, to::setRetentionExpirationTime);
+    return to.build();
   }
 
-  private StorageObject blobIdEncode(BlobId blobId) {
-    StorageObject storageObject = new StorageObject();
-    storageObject.setBucket(blobId.getBucket());
-    storageObject.setName(blobId.getName());
-    storageObject.setGeneration(blobId.getGeneration());
-    return storageObject;
+  private StorageObject blobIdEncode(BlobId from) {
+    StorageObject to = new StorageObject();
+    to.setBucket(from.getBucket());
+    to.setName(from.getName());
+    to.setGeneration(from.getGeneration());
+    return to;
   }
 
-  private BlobId blobIdDecode(StorageObject storageObject) {
-    return BlobId.of(
-        storageObject.getBucket(), storageObject.getName(), storageObject.getGeneration());
+  private BlobId blobIdDecode(StorageObject from) {
+    return BlobId.of(from.getBucket(), from.getName(), from.getGeneration());
   }
 
-  private StorageObject.CustomerEncryption customerEncryptionEncode(
-      CustomerEncryption customerEncryption) {
+  private StorageObject.CustomerEncryption customerEncryptionEncode(CustomerEncryption from) {
     return new StorageObject.CustomerEncryption()
-        .setEncryptionAlgorithm(customerEncryption.getEncryptionAlgorithm())
-        .setKeySha256(customerEncryption.getKeySha256());
+        .setEncryptionAlgorithm(from.getEncryptionAlgorithm())
+        .setKeySha256(from.getKeySha256());
   }
 
-  private CustomerEncryption customerEncryptionDecode(
-      StorageObject.CustomerEncryption customerEncryptionPb) {
-    return new CustomerEncryption(
-        customerEncryptionPb.getEncryptionAlgorithm(), customerEncryptionPb.getKeySha256());
+  private CustomerEncryption customerEncryptionDecode(StorageObject.CustomerEncryption from) {
+    return new CustomerEncryption(from.getEncryptionAlgorithm(), from.getKeySha256());
   }
 
-  private com.google.api.services.storage.model.Bucket bucketInfoEncode(BucketInfo bucketInfo) {
-    com.google.api.services.storage.model.Bucket bucketPb =
-        new com.google.api.services.storage.model.Bucket();
-    bucketPb.setId(bucketInfo.getGeneratedId());
-    bucketPb.setName(bucketInfo.getName());
-    bucketPb.setEtag(bucketInfo.getEtag());
-    if (bucketInfo.getCreateTime() != null) {
-      bucketPb.setTimeCreated(new DateTime(bucketInfo.getCreateTime()));
-    }
-    if (bucketInfo.getUpdateTime() != null) {
-      bucketPb.setUpdated(new DateTime(bucketInfo.getUpdateTime()));
-    }
-    if (bucketInfo.getMetageneration() != null) {
-      bucketPb.setMetageneration(bucketInfo.getMetageneration());
-    }
-    if (bucketInfo.getLocation() != null) {
-      bucketPb.setLocation(bucketInfo.getLocation());
-    }
-    if (bucketInfo.getLocationType() != null) {
-      bucketPb.setLocationType(bucketInfo.getLocationType());
-    }
-    if (bucketInfo.getRpo() != null) {
-      bucketPb.setRpo(bucketInfo.getRpo().toString());
-    }
-    if (bucketInfo.getStorageClass() != null) {
-      bucketPb.setStorageClass(bucketInfo.getStorageClass().toString());
-    }
-    if (bucketInfo.getCors() != null) {
-      bucketPb.setCors(
-          bucketInfo.getCors().stream()
-              .map(cors()::encode)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (bucketInfo.getAcl() != null) {
-      bucketPb.setAcl(
-          bucketInfo.getAcl().stream()
-              .map(bucketAcl()::encode)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (bucketInfo.getDefaultAcl() != null) {
-      bucketPb.setDefaultObjectAcl(
-          bucketInfo.getDefaultAcl().stream()
-              .map(objectAcl()::encode)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (bucketInfo.getOwner() != null) {
-      bucketPb.setOwner(new Bucket.Owner().setEntity(entityEncode(bucketInfo.getOwner())));
-    }
-    bucketPb.setSelfLink(bucketInfo.getSelfLink());
-    if (bucketInfo.versioningEnabled() != null) {
-      bucketPb.setVersioning(new Versioning().setEnabled(bucketInfo.versioningEnabled()));
-    }
-    if (bucketInfo.requesterPays() != null) {
-      Bucket.Billing billing = new Bucket.Billing();
-      billing.setRequesterPays(bucketInfo.requesterPays());
-      bucketPb.setBilling(billing);
-    }
-    if (bucketInfo.getIndexPage() != null || bucketInfo.getNotFoundPage() != null) {
+  private Bucket bucketInfoEncode(BucketInfo from) {
+    Bucket to = new Bucket();
+    ifNonNull(from.getAcl(), toImmutableListOf(bucketAcl()::encode), to::setAcl);
+    ifNonNull(from.getCors(), toImmutableListOf(cors()::encode), to::setCors);
+    ifNonNull(from.getCreateTime(), DateTime::new, to::setTimeCreated);
+    ifNonNull(
+        from.getDefaultAcl(), toImmutableListOf(objectAcl()::encode), to::setDefaultObjectAcl);
+    ifNonNull(from.getLocation(), to::setLocation);
+    ifNonNull(from.getLocationType(), to::setLocationType);
+    ifNonNull(from.getMetageneration(), to::setMetageneration);
+    ifNonNull(
+        from.getOwner(),
+        lift(this::entityEncode).andThen(o -> new Bucket.Owner().setEntity(o)),
+        to::setOwner);
+    ifNonNull(from.getRpo(), Rpo::toString, to::setRpo);
+    ifNonNull(from.getStorageClass(), StorageClass::toString, to::setStorageClass);
+    ifNonNull(from.getUpdateTime(), DateTime::new, to::setUpdated);
+    ifNonNull(from.versioningEnabled(), b -> new Versioning().setEnabled(b), to::setVersioning);
+    to.setEtag(from.getEtag());
+    to.setId(from.getGeneratedId());
+    to.setName(from.getName());
+    to.setSelfLink(from.getSelfLink());
+
+    ifNonNull(from.requesterPays(), b -> new Bucket.Billing().setRequesterPays(b), to::setBilling);
+    if (from.getIndexPage() != null || from.getNotFoundPage() != null) {
       Website website = new Website();
-      website.setMainPageSuffix(bucketInfo.getIndexPage());
-      website.setNotFoundPage(bucketInfo.getNotFoundPage());
-      bucketPb.setWebsite(website);
+      website.setMainPageSuffix(from.getIndexPage());
+      website.setNotFoundPage(from.getNotFoundPage());
+      to.setWebsite(website);
     }
 
     @SuppressWarnings("deprecation")
-    List<? extends DeleteRule> deleteRules = bucketInfo.getDeleteRules();
+    List<? extends DeleteRule> deleteRules = from.getDeleteRules();
     // Do not use, #getLifecycleRules, it can not return null, which is important to our logic here
-    List<? extends LifecycleRule> lifecycleRules = bucketInfo.lifecycleRules;
+    List<? extends LifecycleRule> lifecycleRules = from.lifecycleRules;
     if (deleteRules != null || lifecycleRules != null) {
       Lifecycle lifecycle = new Lifecycle();
 
@@ -439,192 +334,114 @@ final class ApiaryConversions {
         lifecycle.setRule(Collections.emptyList());
       } else {
         Set<Rule> rules = new HashSet<>();
-        if (deleteRules != null) {
-          rules.addAll(
-              deleteRules.stream()
-                  .map(deleteRule()::encode)
-                  .collect(ImmutableList.toImmutableList()));
-        }
-        if (lifecycleRules != null) {
-          rules.addAll(
-              lifecycleRules.stream()
-                  .map(lifecycleRule()::encode)
-                  .collect(ImmutableList.toImmutableList()));
-        }
-
+        ifNonNull(deleteRules, r -> r.stream().map(deleteRule()::encode).forEach(rules::add));
+        ifNonNull(lifecycleRules, r -> r.stream().map(lifecycleRule()::encode).forEach(rules::add));
         if (!rules.isEmpty()) {
           lifecycle.setRule(ImmutableList.copyOf(rules));
         }
       }
 
-      bucketPb.setLifecycle(lifecycle);
+      to.setLifecycle(lifecycle);
     }
 
-    if (bucketInfo.getLabels() != null) {
-      bucketPb.setLabels(bucketInfo.getLabels());
-    }
-    if (bucketInfo.getDefaultKmsKeyName() != null) {
-      bucketPb.setEncryption(
-          new Encryption().setDefaultKmsKeyName(bucketInfo.getDefaultKmsKeyName()));
-    }
-    if (bucketInfo.getDefaultEventBasedHold() != null) {
-      bucketPb.setDefaultEventBasedHold(bucketInfo.getDefaultEventBasedHold());
-    }
-    if (bucketInfo.getRetentionPeriod() != null) {
-      if (Data.isNull(bucketInfo.getRetentionPeriod())) {
-        bucketPb.setRetentionPolicy(Data.nullOf(Bucket.RetentionPolicy.class));
+    ifNonNull(from.getDefaultEventBasedHold(), to::setDefaultEventBasedHold);
+    ifNonNull(
+        from.getDefaultKmsKeyName(),
+        k -> new Encryption().setDefaultKmsKeyName(k),
+        to::setEncryption);
+    ifNonNull(from.getLabels(), to::setLabels);
+    if (from.getRetentionPeriod() != null) {
+      if (Data.isNull(from.getRetentionPeriod())) {
+        to.setRetentionPolicy(Data.nullOf(Bucket.RetentionPolicy.class));
       } else {
         Bucket.RetentionPolicy retentionPolicy = new Bucket.RetentionPolicy();
-        retentionPolicy.setRetentionPeriod(bucketInfo.getRetentionPeriod());
-        if (bucketInfo.getRetentionEffectiveTime() != null) {
-          retentionPolicy.setEffectiveTime(new DateTime(bucketInfo.getRetentionEffectiveTime()));
+        retentionPolicy.setRetentionPeriod(from.getRetentionPeriod());
+        if (from.getRetentionEffectiveTime() != null) {
+          retentionPolicy.setEffectiveTime(new DateTime(from.getRetentionEffectiveTime()));
         }
-        if (bucketInfo.retentionPolicyIsLocked() != null) {
-          retentionPolicy.setIsLocked(bucketInfo.retentionPolicyIsLocked());
+        if (from.retentionPolicyIsLocked() != null) {
+          retentionPolicy.setIsLocked(from.retentionPolicyIsLocked());
         }
-        bucketPb.setRetentionPolicy(retentionPolicy);
+        to.setRetentionPolicy(retentionPolicy);
       }
     }
-    if (bucketInfo.getIamConfiguration() != null) {
-      bucketPb.setIamConfiguration(iamConfigEncode(bucketInfo.getIamConfiguration()));
-    }
-    if (bucketInfo.getLogging() != null) {
-      bucketPb.setLogging(loggingEncode(bucketInfo.getLogging()));
-    }
-    return bucketPb;
+    ifNonNull(from.getIamConfiguration(), this::iamConfigEncode, to::setIamConfiguration);
+    ifNonNull(from.getLogging(), this::loggingEncode, to::setLogging);
+    return to;
   }
 
   @SuppressWarnings("deprecation")
-  private BucketInfo bucketInfoDecode(com.google.api.services.storage.model.Bucket bucketPb) {
-    BucketInfo.Builder builder = new BuilderImpl(bucketPb.getName());
-    if (bucketPb.getId() != null) {
-      builder.setGeneratedId(bucketPb.getId());
-    }
-
-    if (bucketPb.getEtag() != null) {
-      builder.setEtag(bucketPb.getEtag());
-    }
-    if (bucketPb.getMetageneration() != null) {
-      builder.setMetageneration(bucketPb.getMetageneration());
-    }
-    if (bucketPb.getSelfLink() != null) {
-      builder.setSelfLink(bucketPb.getSelfLink());
-    }
-    if (bucketPb.getTimeCreated() != null) {
-      builder.setCreateTime(bucketPb.getTimeCreated().getValue());
-    }
-    if (bucketPb.getUpdated() != null) {
-      builder.setUpdateTime(bucketPb.getUpdated().getValue());
-    }
-    if (bucketPb.getLocation() != null) {
-      builder.setLocation(bucketPb.getLocation());
-    }
-    if (bucketPb.getRpo() != null) {
-      builder.setRpo(Rpo.valueOf(bucketPb.getRpo()));
-    }
-    if (bucketPb.getStorageClass() != null) {
-      builder.setStorageClass(StorageClass.valueOf(bucketPb.getStorageClass()));
-    }
-    if (bucketPb.getCors() != null) {
-      builder.setCors(
-          bucketPb.getCors().stream().map(cors()::decode).collect(ImmutableList.toImmutableList()));
-    }
-    if (bucketPb.getAcl() != null) {
-      builder.setAcl(
-          bucketPb.getAcl().stream()
-              .map(bucketAcl()::decode)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (bucketPb.getDefaultObjectAcl() != null) {
-      builder.setDefaultAcl(
-          bucketPb.getDefaultObjectAcl().stream()
-              .map(objectAcl()::decode)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (bucketPb.getOwner() != null) {
-      builder.setOwner(entityDecode(bucketPb.getOwner().getEntity()));
-    }
-    if (bucketPb.getVersioning() != null) {
-      builder.setVersioningEnabled(bucketPb.getVersioning().getEnabled());
-    }
-    Website website = bucketPb.getWebsite();
-    if (website != null) {
-      builder.setIndexPage(website.getMainPageSuffix());
-      builder.setNotFoundPage(website.getNotFoundPage());
-    }
-    if (bucketPb.getLifecycle() != null && bucketPb.getLifecycle().getRule() != null) {
-      builder.setLifecycleRules(
-          bucketPb.getLifecycle().getRule().stream()
-              .map(lifecycleRule()::decode)
-              .collect(ImmutableList.toImmutableList()));
-      builder.setDeleteRules(
-          bucketPb.getLifecycle().getRule().stream()
-              .map(deleteRule()::decode)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (bucketPb.getLabels() != null) {
-      builder.setLabels(bucketPb.getLabels());
-    }
-    Bucket.Billing billing = bucketPb.getBilling();
-    if (billing != null) {
-      builder.setRequesterPays(billing.getRequesterPays());
-    }
-    Encryption encryption = bucketPb.getEncryption();
+  private BucketInfo bucketInfoDecode(com.google.api.services.storage.model.Bucket from) {
+    BucketInfo.Builder to = new BuilderImpl(from.getName());
+    ifNonNull(from.getAcl(), toImmutableListOf(bucketAcl()::decode), to::setAcl);
+    ifNonNull(from.getCors(), toImmutableListOf(cors()::decode), to::setCors);
+    ifNonNull(
+        from.getDefaultObjectAcl(), toImmutableListOf(objectAcl()::decode), to::setDefaultAcl);
+    ifNonNull(from.getEtag(), to::setEtag);
+    ifNonNull(from.getId(), to::setGeneratedId);
+    ifNonNull(from.getLocation(), to::setLocation);
+    ifNonNull(from.getLocationType(), to::setLocationType);
+    ifNonNull(from.getMetageneration(), to::setMetageneration);
+    ifNonNull(
+        from.getOwner(), lift(Bucket.Owner::getEntity).andThen(this::entityDecode), to::setOwner);
+    ifNonNull(from.getRpo(), Rpo::valueOf, to::setRpo);
+    ifNonNull(from.getSelfLink(), to::setSelfLink);
+    ifNonNull(from.getStorageClass(), StorageClass::valueOf, to::setStorageClass);
+    ifNonNull(from.getTimeCreated(), DateTime::getValue, to::setCreateTime);
+    ifNonNull(from.getUpdated(), DateTime::getValue, to::setUpdateTime);
+    ifNonNull(from.getVersioning(), Versioning::getEnabled, to::setVersioningEnabled);
+    ifNonNull(from.getWebsite(), Website::getMainPageSuffix, to::setIndexPage);
+    ifNonNull(from.getWebsite(), Website::getNotFoundPage, to::setNotFoundPage);
+    ifNonNull(
+        from.getLifecycle(),
+        lift(Lifecycle::getRule).andThen(toImmutableListOf(lifecycleRule()::decode)),
+        to::setLifecycleRules);
+    // preserve mapping to deprecated property
+    ifNonNull(
+        from.getLifecycle(),
+        lift(Lifecycle::getRule).andThen(toImmutableListOf(deleteRule()::decode)),
+        to::setDeleteRules);
+    ifNonNull(from.getDefaultEventBasedHold(), to::setDefaultEventBasedHold);
+    ifNonNull(from.getLabels(), to::setLabels);
+    ifNonNull(from.getBilling(), Billing::getRequesterPays, to::setRequesterPays);
+    Encryption encryption = from.getEncryption();
     if (encryption != null
         && encryption.getDefaultKmsKeyName() != null
         && !encryption.getDefaultKmsKeyName().isEmpty()) {
-      builder.setDefaultKmsKeyName(encryption.getDefaultKmsKeyName());
-    }
-    if (bucketPb.getDefaultEventBasedHold() != null) {
-      builder.setDefaultEventBasedHold(bucketPb.getDefaultEventBasedHold());
-    }
-    Bucket.RetentionPolicy retentionPolicy = bucketPb.getRetentionPolicy();
-    if (retentionPolicy != null) {
-      if (retentionPolicy.getEffectiveTime() != null) {
-        builder.setRetentionEffectiveTime(retentionPolicy.getEffectiveTime().getValue());
-      }
-      if (retentionPolicy.getIsLocked() != null) {
-        builder.setRetentionPolicyIsLocked(retentionPolicy.getIsLocked());
-      }
-      if (retentionPolicy.getRetentionPeriod() != null) {
-        builder.setRetentionPeriod(retentionPolicy.getRetentionPeriod());
-      }
-    }
-    Bucket.IamConfiguration iamConfiguration = bucketPb.getIamConfiguration();
-
-    if (bucketPb.getLocationType() != null) {
-      builder.setLocationType(bucketPb.getLocationType());
+      to.setDefaultKmsKeyName(encryption.getDefaultKmsKeyName());
     }
 
-    if (iamConfiguration != null) {
-      builder.setIamConfiguration(iamConfigDecode(iamConfiguration));
+    RetentionPolicy retentionPolicy = from.getRetentionPolicy();
+    if (retentionPolicy != null && retentionPolicy.getEffectiveTime() != null) {
+      to.setRetentionEffectiveTime(retentionPolicy.getEffectiveTime().getValue());
     }
-    Bucket.Logging logging = bucketPb.getLogging();
-    if (logging != null) {
-      builder.setLogging(loggingDecode(logging));
-    }
-    return builder.build();
+    ifNonNull(retentionPolicy, RetentionPolicy::getIsLocked, to::setRetentionPolicyIsLocked);
+    ifNonNull(retentionPolicy, RetentionPolicy::getRetentionPeriod, to::setRetentionPeriod);
+    ifNonNull(from.getIamConfiguration(), this::iamConfigDecode, to::setIamConfiguration);
+    ifNonNull(from.getLogging(), this::loggingDecode, to::setLogging);
+
+    return to.build();
   }
 
   @SuppressWarnings("deprecation")
-  private Rule deleteRuleEncode(DeleteRule deleteRule) {
-    if (deleteRule instanceof RawDeleteRule) {
-      RawDeleteRule rule = (RawDeleteRule) deleteRule;
+  private Rule deleteRuleEncode(DeleteRule from) {
+    if (from instanceof RawDeleteRule) {
+      RawDeleteRule rule = (RawDeleteRule) from;
       return rule.getRule();
     }
-    Rule rule = new Rule();
-    rule.setAction(new Rule.Action().setType(DeleteRule.SUPPORTED_ACTION));
+    Rule to = new Rule();
+    to.setAction(new Rule.Action().setType(DeleteRule.SUPPORTED_ACTION));
     Rule.Condition condition = new Rule.Condition();
-    deleteRule.populateCondition(condition);
-    rule.setCondition(condition);
-    return rule;
+    from.populateCondition(condition);
+    to.setCondition(condition);
+    return to;
   }
 
   @SuppressWarnings("deprecation")
-  private DeleteRule deleteRuleDecode(Rule rule) { // TODO: Name/type cleanup
-    if (rule.getAction() != null
-        && DeleteRule.SUPPORTED_ACTION.endsWith(rule.getAction().getType())) {
-      Rule.Condition condition = rule.getCondition();
+  private DeleteRule deleteRuleDecode(Rule from) { // TODO: Name/type cleanup
+    if (from.getAction() != null
+        && DeleteRule.SUPPORTED_ACTION.endsWith(from.getAction().getType())) {
+      Rule.Condition condition = from.getCondition();
       Integer age = condition.getAge();
       if (age != null) {
         return new AgeDeleteRule(age);
@@ -642,107 +459,80 @@ final class ApiaryConversions {
         return new IsLiveDeleteRule(isLive);
       }
     }
-    return new RawDeleteRule(rule);
+    return new RawDeleteRule(from);
   }
 
-  private Bucket.IamConfiguration iamConfigEncode(IamConfiguration in) {
-    Bucket.IamConfiguration iamConfiguration = new Bucket.IamConfiguration();
-
-    Bucket.IamConfiguration.UniformBucketLevelAccess uniformBucketLevelAccess =
-        new Bucket.IamConfiguration.UniformBucketLevelAccess();
-    uniformBucketLevelAccess.setEnabled(in.isUniformBucketLevelAccessEnabled());
-    uniformBucketLevelAccess.setLockedTime(
-        in.getUniformBucketLevelAccessLockedTime() == null
-            ? null
-            : new DateTime(in.getUniformBucketLevelAccessLockedTime()));
-
-    iamConfiguration.setUniformBucketLevelAccess(uniformBucketLevelAccess);
-    iamConfiguration.setPublicAccessPrevention(
-        in.getPublicAccessPrevention() == null ? null : in.getPublicAccessPrevention().getValue());
-
-    return iamConfiguration;
+  private Bucket.IamConfiguration iamConfigEncode(IamConfiguration from) {
+    Bucket.IamConfiguration to = new Bucket.IamConfiguration();
+    to.setUniformBucketLevelAccess(ublaEncode(from));
+    ifNonNull(
+        from.getPublicAccessPrevention(),
+        PublicAccessPrevention::getValue,
+        to::setPublicAccessPrevention);
+    return to;
   }
 
-  private IamConfiguration iamConfigDecode(Bucket.IamConfiguration iamConfiguration) {
-    Bucket.IamConfiguration.UniformBucketLevelAccess uniformBucketLevelAccess =
-        iamConfiguration.getUniformBucketLevelAccess();
-    DateTime lockedTime = uniformBucketLevelAccess.getLockedTime();
-    String publicAccessPrevention = iamConfiguration.getPublicAccessPrevention();
+  private IamConfiguration iamConfigDecode(Bucket.IamConfiguration from) {
+    Bucket.IamConfiguration.UniformBucketLevelAccess ubla = from.getUniformBucketLevelAccess();
 
-    PublicAccessPrevention publicAccessPreventionValue = null;
-    if (publicAccessPrevention != null) {
-      publicAccessPreventionValue = PublicAccessPrevention.parse(publicAccessPrevention);
+    IamConfiguration.Builder to =
+        IamConfiguration.newBuilder().setIsUniformBucketLevelAccessEnabled(ubla.getEnabled());
+    ifNonNull(ubla.getLockedTime(), DateTime::getValue, to::setUniformBucketLevelAccessLockedTime);
+    ifNonNull(
+        from.getPublicAccessPrevention(),
+        PublicAccessPrevention::parse,
+        to::setPublicAccessPrevention);
+    return to.build();
+  }
+
+  private UniformBucketLevelAccess ublaEncode(IamConfiguration from) {
+    UniformBucketLevelAccess to = new UniformBucketLevelAccess();
+    to.setEnabled(from.isUniformBucketLevelAccessEnabled());
+    ifNonNull(from.getUniformBucketLevelAccessLockedTime(), DateTime::new, to::setLockedTime);
+    return to;
+  }
+
+  private Rule lifecycleRuleEncode(LifecycleRule from) {
+    Rule to = new Rule();
+    to.setAction(ruleActionEncode(from.getLifecycleAction()));
+    to.setCondition(ruleConditionEncode(from.getLifecycleCondition()));
+    return to;
+  }
+
+  private Condition ruleConditionEncode(LifecycleCondition from) {
+    Condition to =
+        new Condition()
+            .setAge(from.getAge())
+            .setIsLive(from.getIsLive())
+            .setNumNewerVersions(from.getNumberOfNewerVersions())
+            .setDaysSinceNoncurrentTime(from.getDaysSinceNoncurrentTime())
+            .setDaysSinceCustomTime(from.getDaysSinceCustomTime());
+    ifNonNull(from.getCreatedBefore(), this::truncateToDateWithNoTzDrift, to::setCreatedBefore);
+    ifNonNull(
+        from.getNoncurrentTimeBefore(),
+        this::truncateToDateWithNoTzDrift,
+        to::setNoncurrentTimeBefore);
+    ifNonNull(
+        from.getCustomTimeBefore(), this::truncateToDateWithNoTzDrift, to::setCustomTimeBefore);
+    ifNonNull(
+        from.getMatchesStorageClass(),
+        toImmutableListOf(Object::toString),
+        to::setMatchesStorageClass);
+    return to;
+  }
+
+  private Action ruleActionEncode(LifecycleAction from) {
+    Action to = new Action().setType(from.getActionType());
+    if (from.getActionType().equals(SetStorageClassLifecycleAction.TYPE)) {
+      to.setStorageClass(((SetStorageClassLifecycleAction) from).getStorageClass().toString());
     }
-
-    return IamConfiguration.newBuilder()
-        .setIsUniformBucketLevelAccessEnabled(uniformBucketLevelAccess.getEnabled())
-        .setUniformBucketLevelAccessLockedTime(lockedTime == null ? null : lockedTime.getValue())
-        .setPublicAccessPrevention(publicAccessPreventionValue)
-        .build();
+    return to;
   }
 
-  private Rule lifecycleRuleEncode(LifecycleRule lifecycleRule) {
-    Rule rule = new Rule();
-
-    Rule.Action action =
-        new Rule.Action().setType(lifecycleRule.getLifecycleAction().getActionType());
-    if (lifecycleRule
-        .getLifecycleAction()
-        .getActionType()
-        .equals(SetStorageClassLifecycleAction.TYPE)) {
-      action.setStorageClass(
-          ((SetStorageClassLifecycleAction) lifecycleRule.getLifecycleAction())
-              .getStorageClass()
-              .toString());
-    }
-
-    rule.setAction(action);
-
-    Rule.Condition condition =
-        new Rule.Condition()
-            .setAge(lifecycleRule.getLifecycleCondition().getAge())
-            .setCreatedBefore(
-                lifecycleRule.getLifecycleCondition().getCreatedBefore() == null
-                    ? null
-                    : new DateTime(
-                        true,
-                        lifecycleRule.getLifecycleCondition().getCreatedBefore().getValue(),
-                        0))
-            .setIsLive(lifecycleRule.getLifecycleCondition().getIsLive())
-            .setNumNewerVersions(lifecycleRule.getLifecycleCondition().getNumberOfNewerVersions())
-            .setMatchesStorageClass(
-                lifecycleRule.getLifecycleCondition().getMatchesStorageClass() == null
-                    ? null
-                    : lifecycleRule.getLifecycleCondition().getMatchesStorageClass().stream()
-                        .map(Object::toString)
-                        .collect(ImmutableList.toImmutableList()))
-            .setDaysSinceNoncurrentTime(
-                lifecycleRule.getLifecycleCondition().getDaysSinceNoncurrentTime())
-            .setNoncurrentTimeBefore(
-                lifecycleRule.getLifecycleCondition().getNoncurrentTimeBefore() == null
-                    ? null
-                    : new DateTime(
-                        true,
-                        lifecycleRule.getLifecycleCondition().getNoncurrentTimeBefore().getValue(),
-                        0))
-            .setCustomTimeBefore(
-                lifecycleRule.getLifecycleCondition().getCustomTimeBefore() == null
-                    ? null
-                    : new DateTime(
-                        true,
-                        lifecycleRule.getLifecycleCondition().getCustomTimeBefore().getValue(),
-                        0))
-            .setDaysSinceCustomTime(lifecycleRule.getLifecycleCondition().getDaysSinceCustomTime());
-
-    rule.setCondition(condition);
-
-    return rule;
-  }
-
-  private LifecycleRule lifecycleRuleDecode(Rule rule) {
+  private LifecycleRule lifecycleRuleDecode(Rule from) {
     LifecycleAction lifecycleAction;
 
-    Rule.Action action = rule.getAction();
+    Rule.Action action = from.getAction();
 
     switch (action.getType()) {
       case DeleteLifecycleAction.TYPE:
@@ -763,7 +553,7 @@ final class ApiaryConversions {
         lifecycleAction = LifecycleAction.newLifecycleAction("Unknown action");
     }
 
-    Rule.Condition condition = rule.getCondition();
+    Rule.Condition condition = from.getCondition();
 
     LifecycleCondition.Builder conditionBuilder =
         LifecycleCondition.newBuilder()
@@ -771,152 +561,119 @@ final class ApiaryConversions {
             .setCreatedBefore(condition.getCreatedBefore())
             .setIsLive(condition.getIsLive())
             .setNumberOfNewerVersions(condition.getNumNewerVersions())
-            .setMatchesStorageClass(
-                condition.getMatchesStorageClass() == null
-                    ? null
-                    : condition.getMatchesStorageClass().stream()
-                        .map(StorageClass::valueOf)
-                        .collect(ImmutableList.toImmutableList()))
             .setDaysSinceNoncurrentTime(condition.getDaysSinceNoncurrentTime())
             .setNoncurrentTimeBefore(condition.getNoncurrentTimeBefore())
             .setCustomTimeBefore(condition.getCustomTimeBefore())
             .setDaysSinceCustomTime(condition.getDaysSinceCustomTime());
+    ifNonNull(
+        condition.getMatchesStorageClass(),
+        toImmutableListOf(StorageClass::valueOf),
+        conditionBuilder::setMatchesStorageClass);
 
     return new LifecycleRule(lifecycleAction, conditionBuilder.build());
   }
 
-  private Bucket.Logging loggingEncode(Logging in) {
-    Bucket.Logging logging;
-    if (in.getLogBucket() != null || in.getLogObjectPrefix() != null) {
-      logging = new Bucket.Logging();
-      logging.setLogBucket(in.getLogBucket());
-      logging.setLogObjectPrefix(in.getLogObjectPrefix());
+  private Bucket.Logging loggingEncode(Logging from) {
+    Bucket.Logging to;
+    if (from.getLogBucket() != null || from.getLogObjectPrefix() != null) {
+      to = new Bucket.Logging();
+      to.setLogBucket(from.getLogBucket());
+      to.setLogObjectPrefix(from.getLogObjectPrefix());
     } else {
-      logging = Data.nullOf(Bucket.Logging.class);
+      to = Data.nullOf(Bucket.Logging.class);
     }
-    return logging;
+    return to;
   }
 
-  private Logging loggingDecode(Bucket.Logging logging) {
+  private Logging loggingDecode(Bucket.Logging from) {
     return Logging.newBuilder()
-        .setLogBucket(logging.getLogBucket())
-        .setLogObjectPrefix(logging.getLogObjectPrefix())
+        .setLogBucket(from.getLogBucket())
+        .setLogObjectPrefix(from.getLogObjectPrefix())
         .build();
   }
 
-  private Bucket.Cors corsEncode(Cors cors) {
-    Bucket.Cors pb = new Bucket.Cors();
-    pb.setMaxAgeSeconds(cors.getMaxAgeSeconds());
-    pb.setResponseHeader(cors.getResponseHeaders());
-    if (cors.getMethods() != null) {
-      pb.setMethod(
-          newArrayList(
-              cors.getMethods().stream()
-                  .map(Object::toString)
-                  .collect(ImmutableList.toImmutableList())));
-    }
-    if (cors.getOrigins() != null) {
-      pb.setOrigin(
-          newArrayList(
-              cors.getOrigins().stream()
-                  .map(Object::toString)
-                  .collect(ImmutableList.toImmutableList())));
-    }
-    return pb;
+  private Bucket.Cors corsEncode(Cors from) {
+    Bucket.Cors to = new Bucket.Cors();
+    to.setMaxAgeSeconds(from.getMaxAgeSeconds());
+    to.setResponseHeader(from.getResponseHeaders());
+    ifNonNull(from.getMethods(), toImmutableListOf(Object::toString), to::setMethod);
+    ifNonNull(from.getOrigins(), toImmutableListOf(Object::toString), to::setOrigin);
+    return to;
   }
 
-  private Cors corsDecode(Bucket.Cors cors) {
-    Cors.Builder builder = Cors.newBuilder().setMaxAgeSeconds(cors.getMaxAgeSeconds());
-    if (cors.getMethod() != null) {
-      builder.setMethods(
-          cors.getMethod().stream()
-              .map(String::toUpperCase)
-              .map(HttpMethod::valueOf)
-              .collect(ImmutableList.toImmutableList()));
-    }
-    if (cors.getOrigin() != null) {
-      builder.setOrigins(
-          cors.getOrigin().stream().map(Origin::of).collect(ImmutableList.toImmutableList()));
-    }
-    builder.setResponseHeaders(cors.getResponseHeader());
-    return builder.build();
+  private Cors corsDecode(Bucket.Cors from) {
+    Cors.Builder to = Cors.newBuilder().setMaxAgeSeconds(from.getMaxAgeSeconds());
+    ifNonNull(
+        from.getMethod(),
+        m ->
+            m.stream()
+                .map(String::toUpperCase)
+                .map(HttpMethod::valueOf)
+                .collect(ImmutableList.toImmutableList()),
+        to::setMethods);
+    ifNonNull(from.getOrigin(), toImmutableListOf(Origin::of), to::setOrigins);
+    to.setResponseHeaders(from.getResponseHeader());
+    return to.build();
   }
 
   private com.google.api.services.storage.model.ServiceAccount serviceAccountEncode(
-      ServiceAccount serviceAccount) {
-    com.google.api.services.storage.model.ServiceAccount serviceAccountPb =
-        new com.google.api.services.storage.model.ServiceAccount();
-    serviceAccountPb.setEmailAddress(serviceAccount.getEmail());
-    return serviceAccountPb;
+      ServiceAccount from) {
+    return new com.google.api.services.storage.model.ServiceAccount()
+        .setEmailAddress(from.getEmail());
   }
 
   private ServiceAccount serviceAccountDecode(
-      com.google.api.services.storage.model.ServiceAccount accountPb) {
-    return ServiceAccount.of(accountPb.getEmailAddress());
+      com.google.api.services.storage.model.ServiceAccount from) {
+    return ServiceAccount.of(from.getEmailAddress());
   }
 
-  private com.google.api.services.storage.model.HmacKey hmacKeyEncode(HmacKey in) {
-    com.google.api.services.storage.model.HmacKey hmacKey =
+  private com.google.api.services.storage.model.HmacKey hmacKeyEncode(HmacKey from) {
+    com.google.api.services.storage.model.HmacKey to =
         new com.google.api.services.storage.model.HmacKey();
-    hmacKey.setSecret(in.getSecretKey());
-
-    if (in.getMetadata() != null) {
-      hmacKey.setMetadata(hmacKeyMetadataEncode(in.getMetadata()));
-    }
-
-    return hmacKey;
+    to.setSecret(from.getSecretKey());
+    ifNonNull(from.getMetadata(), this::hmacKeyMetadataEncode, to::setMetadata);
+    return to;
   }
 
-  private HmacKey hmacKeyDecode(com.google.api.services.storage.model.HmacKey hmacKey) {
-    return HmacKey.newBuilder(hmacKey.getSecret())
-        .setMetadata(hmacKeyMetadataDecode(hmacKey.getMetadata()))
+  private HmacKey hmacKeyDecode(com.google.api.services.storage.model.HmacKey from) {
+    return HmacKey.newBuilder(from.getSecret())
+        .setMetadata(hmacKeyMetadataDecode(from.getMetadata()))
         .build();
   }
 
   private com.google.api.services.storage.model.HmacKeyMetadata hmacKeyMetadataEncode(
-      HmacKeyMetadata hmacKeyMetadata) {
-    com.google.api.services.storage.model.HmacKeyMetadata metadata =
+      HmacKeyMetadata from) {
+    com.google.api.services.storage.model.HmacKeyMetadata to =
         new com.google.api.services.storage.model.HmacKeyMetadata();
-    metadata.setAccessId(hmacKeyMetadata.getAccessId());
-    metadata.setEtag(hmacKeyMetadata.getEtag());
-    metadata.setId(hmacKeyMetadata.getId());
-    metadata.setProjectId(hmacKeyMetadata.getProjectId());
-    metadata.setServiceAccountEmail(
-        hmacKeyMetadata.getServiceAccount() == null
-            ? null
-            : hmacKeyMetadata.getServiceAccount().getEmail());
-    metadata.setState(
-        hmacKeyMetadata.getState() == null ? null : hmacKeyMetadata.getState().toString());
-    metadata.setTimeCreated(
-        hmacKeyMetadata.getCreateTime() == null
-            ? null
-            : new DateTime(hmacKeyMetadata.getCreateTime()));
-    metadata.setUpdated(
-        hmacKeyMetadata.getUpdateTime() == null
-            ? null
-            : new DateTime(hmacKeyMetadata.getUpdateTime()));
-
-    return metadata;
+    to.setAccessId(from.getAccessId());
+    to.setEtag(from.getEtag());
+    to.setId(from.getId());
+    to.setProjectId(from.getProjectId());
+    ifNonNull(from.getServiceAccount(), ServiceAccount::getEmail, to::setServiceAccountEmail);
+    ifNonNull(from.getState(), Object::toString, to::setState);
+    ifNonNull(from.getCreateTime(), DateTime::new, to::setTimeCreated);
+    ifNonNull(from.getUpdateTime(), DateTime::new, to::setUpdated);
+    return to;
   }
 
   private HmacKeyMetadata hmacKeyMetadataDecode(
-      com.google.api.services.storage.model.HmacKeyMetadata metadata) {
-    return HmacKeyMetadata.newBuilder(ServiceAccount.of(metadata.getServiceAccountEmail()))
-        .setAccessId(metadata.getAccessId())
-        .setCreateTime(metadata.getTimeCreated().getValue())
-        .setEtag(metadata.getEtag())
-        .setId(metadata.getId())
-        .setProjectId(metadata.getProjectId())
-        .setState(HmacKeyState.valueOf(metadata.getState()))
-        .setUpdateTime(metadata.getUpdated().getValue())
+      com.google.api.services.storage.model.HmacKeyMetadata from) {
+    return HmacKeyMetadata.newBuilder(ServiceAccount.of(from.getServiceAccountEmail()))
+        .setAccessId(from.getAccessId())
+        .setCreateTime(from.getTimeCreated().getValue())
+        .setEtag(from.getEtag())
+        .setId(from.getId())
+        .setProjectId(from.getProjectId())
+        .setState(HmacKeyState.valueOf(from.getState()))
+        .setUpdateTime(from.getUpdated().getValue())
         .build();
   }
 
-  private String entityEncode(Entity e) {
-    if (e instanceof RawEntity) {
-      return e.getValue();
-    } else if (e instanceof User) {
-      switch (e.getValue()) {
+  private String entityEncode(Entity from) {
+    if (from instanceof RawEntity) {
+      return from.getValue();
+    } else if (from instanceof User) {
+      switch (from.getValue()) {
         case User.ALL_AUTHENTICATED_USERS:
           return User.ALL_AUTHENTICATED_USERS;
         case User.ALL_USERS:
@@ -927,67 +684,72 @@ final class ApiaryConversions {
     }
 
     // intentionally not an else so that if the default is hit above it will fall through to here
-    return e.getType().name().toLowerCase() + "-" + e.getValue();
+    return from.getType().name().toLowerCase() + "-" + from.getValue();
   }
 
-  private Entity entityDecode(String entityString) {
-    if (entityString.startsWith("user-")) {
-      return new User(entityString.substring(5));
+  private Entity entityDecode(String from) {
+    if (from.startsWith("user-")) {
+      return new User(from.substring(5));
     }
-    if (entityString.equals(User.ALL_USERS)) {
+    if (from.equals(User.ALL_USERS)) {
       return User.ofAllUsers();
     }
-    if (entityString.equals(User.ALL_AUTHENTICATED_USERS)) {
+    if (from.equals(User.ALL_AUTHENTICATED_USERS)) {
       return User.ofAllAuthenticatedUsers();
     }
-    if (entityString.startsWith("group-")) {
-      return new Group(entityString.substring(6));
+    if (from.startsWith("group-")) {
+      return new Group(from.substring(6));
     }
-    if (entityString.startsWith("domain-")) {
-      return new Domain(entityString.substring(7));
+    if (from.startsWith("domain-")) {
+      return new Domain(from.substring(7));
     }
-    if (entityString.startsWith("project-")) {
-      int idx = entityString.indexOf('-', 8);
-      String team = entityString.substring(8, idx);
-      String projectId = entityString.substring(idx + 1);
+    if (from.startsWith("project-")) {
+      int idx = from.indexOf('-', 8);
+      String team = from.substring(8, idx);
+      String projectId = from.substring(idx + 1);
       return new Project(Project.ProjectRole.valueOf(team.toUpperCase()), projectId);
     }
-    return new RawEntity(entityString);
+    return new RawEntity(from);
   }
 
-  private Acl objectAclDecode(ObjectAccessControl objectAccessControl) {
-    Role role = Role.valueOf(objectAccessControl.getRole());
-    Entity entity = entityDecode(objectAccessControl.getEntity());
-    return Acl.newBuilder(entity, role)
-        .setEtag(objectAccessControl.getEtag())
-        .setId(objectAccessControl.getId())
-        .build();
+  private Acl objectAclDecode(ObjectAccessControl from) {
+    Role role = Role.valueOf(from.getRole());
+    Entity entity = entityDecode(from.getEntity());
+    return Acl.newBuilder(entity, role).setEtag(from.getEtag()).setId(from.getId()).build();
   }
 
-  private Acl bucketAclDecode(BucketAccessControl bucketAccessControl) {
-    Role role = Role.valueOf(bucketAccessControl.getRole());
-    Entity entity = entityDecode(bucketAccessControl.getEntity());
-    return Acl.newBuilder(entity, role)
-        .setEtag(bucketAccessControl.getEtag())
-        .setId(bucketAccessControl.getId())
-        .build();
+  private Acl bucketAclDecode(BucketAccessControl from) {
+    Role role = Role.valueOf(from.getRole());
+    Entity entity = entityDecode(from.getEntity());
+    return Acl.newBuilder(entity, role).setEtag(from.getEtag()).setId(from.getId()).build();
   }
 
-  private BucketAccessControl bucketAclEncode(Acl acl) {
-    BucketAccessControl bucketPb = new BucketAccessControl();
-    bucketPb.setEntity(acl.getEntity().toString());
-    bucketPb.setRole(acl.getRole().toString());
-    bucketPb.setId(acl.getId());
-    bucketPb.setEtag(acl.getEtag());
-    return bucketPb;
+  private BucketAccessControl bucketAclEncode(Acl from) {
+    return new BucketAccessControl()
+        .setEntity(from.getEntity().toString())
+        .setRole(from.getRole().toString())
+        .setId(from.getId())
+        .setEtag(from.getEtag());
   }
 
-  private ObjectAccessControl objectAclEncode(Acl acl) {
-    ObjectAccessControl objectPb = new ObjectAccessControl();
-    objectPb.setEntity(entityEncode(acl.getEntity()));
-    objectPb.setRole(acl.getRole().name());
-    objectPb.setId(acl.getId());
-    objectPb.setEtag(acl.getEtag());
-    return objectPb;
+  private ObjectAccessControl objectAclEncode(Acl from) {
+    return new ObjectAccessControl()
+        .setEntity(entityEncode(from.getEntity()))
+        .setRole(from.getRole().name())
+        .setId(from.getId())
+        .setEtag(from.getEtag());
+  }
+
+  private DateTime truncateToDateWithNoTzDrift(DateTime dt) {
+    return new DateTime(true, dt.getValue(), 0);
+  }
+
+  /**
+   * Several properties are translating lists of one type to another. This convenience method allows
+   * specifying a mapping function and composing as part of an {@code #isNonNull} definition.
+   */
+  private static <T1, T2> Function<List<T1>, ImmutableList<T2>> toImmutableListOf(
+      Function<T1, T2> f) {
+    return l -> l.stream().map(f).collect(ImmutableList.toImmutableList());
   }
 }

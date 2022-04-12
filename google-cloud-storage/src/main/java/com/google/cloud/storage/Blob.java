@@ -952,5 +952,4 @@ public class Blob extends BlobInfo {
     in.defaultReadObject();
     this.storage = options.getService();
   }
-
 }

@@ -174,8 +174,7 @@ public class StorageBatch {
       @Override
       public void onSuccess(StorageObject response) {
         BlobInfo info = Conversions.apiary().blobInfo().decode(response);
-        result.success(
-            response == null ? null : info.asBlob(serviceOptions.getService()));
+        result.success(response == null ? null : info.asBlob(serviceOptions.getService()));
       }
 
       @Override
@@ -196,8 +195,7 @@ public class StorageBatch {
       @Override
       public void onSuccess(StorageObject response) {
         BlobInfo info = Conversions.apiary().blobInfo().decode(response);
-        result.success(
-            response == null ? null : info.asBlob(serviceOptions.getService()));
+        result.success(response == null ? null : info.asBlob(serviceOptions.getService()));
       }
 
       @Override

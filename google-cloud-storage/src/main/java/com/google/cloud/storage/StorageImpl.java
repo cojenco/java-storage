@@ -185,8 +185,10 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
     InputStream inputStreamParam =
         firstNonNull(content, new ByteArrayInputStream(EMPTY_BYTE_ARRAY));
     // retries are not safe when the input is an InputStream, so we can't retry.
-    BlobInfo info = Conversions.apiary().blobInfo().decode(
-        storageRpc.create(blobPb, inputStreamParam, optionsMap));
+    BlobInfo info =
+        Conversions.apiary()
+            .blobInfo()
+            .decode(storageRpc.create(blobPb, inputStreamParam, optionsMap));
     return info.asBlob(this);
   }
 
@@ -395,8 +397,11 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
                   ? ImmutableList.of()
                   : Iterables.transform(
                       result.y(),
-                      bucketPb -> Conversions.apiary().bucketInfo().decode(bucketPb).asBucket(
-                          serviceOptions.getService()));
+                      bucketPb ->
+                          Conversions.apiary()
+                              .bucketInfo()
+                              .decode(bucketPb)
+                              .asBucket(serviceOptions.getService()));
           return new PageImpl<>(
               new BucketPageFetcher(serviceOptions, cursor, optionsMap), cursor, buckets);
         });

@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.7.0](https://github.com/googleapis/java-storage/compare/v2.6.1...v2.7.0) (2022-04-27)
+
+
+### Features
+
+* add Storage#downloadTo ([#1354](https://github.com/googleapis/java-storage/issues/1354)) ([5a565a7](https://github.com/googleapis/java-storage/commit/5a565a74cd6aaa85ed81a8cea026477512fbd5da))
+
+
+### Documentation
+
+* add new storage_download_byte_range samples ([#1325](https://github.com/googleapis/java-storage/issues/1325)) ([cef3d13](https://github.com/googleapis/java-storage/commit/cef3d138fd11762437ac59adee6a198139acb7f5))
+
+
+### Dependencies
+
+* update dependency com.google.cloud:google-cloud-pubsub to v1.116.4 ([#1360](https://github.com/googleapis/java-storage/issues/1360)) ([66c7ffe](https://github.com/googleapis/java-storage/commit/66c7ffe112242915165286a972c44fc2568b67c8))
+* update kms.version to v0.95.4 ([#1361](https://github.com/googleapis/java-storage/issues/1361)) ([2f42ba2](https://github.com/googleapis/java-storage/commit/2f42ba296bf5ace92159ee02885eaf0e4d9c9864))
+
 ### [2.6.1](https://github.com/googleapis/java-storage/compare/v2.6.0...v2.6.1) (2022-04-15)
 
 
